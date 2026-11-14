@@ -37,6 +37,7 @@ class EngineParams:
     learned_weight: float = 1.0
     use_learned: bool = True
     external_weight: float = 1.0
+    hub_damping: float = 0.5  # tuned on the held-in slice (first 50 httpx commits)
     learn: learning.LearnParams = field(default_factory=learning.LearnParams)
 
 
@@ -69,6 +70,9 @@ class RepoEngine:
         self.fid_of = {f["path"]: f["id"] for f in files}
         self.test_files = {f["id"] for f in files if f.get("is_test")}
         self.sym_file = {s["id"]: s["file_id"] for s in syms}
+        self.file_size: dict[int, int] = {}
+        for fid in self.sym_file.values():
+            self.file_size[fid] = self.file_size.get(fid, 0) + 1
         self.sym_key = {s["id"]: s["qualname"] for s in syms}
         self.lexicon = seeder.Lexicon.build(files, syms)
         terms = self.store.scan_nodes(TERM, self.repo, ("text", "df"))
@@ -120,7 +124,8 @@ class RepoEngine:
         res = walk(self.store, seeds, hops=self.p.hops, beam=self.p.beam)
         t_walk = time.perf_counter()
         ranked = rank_files(res, self.sym_file, set(self.path_of),
-                            exclude_tests=None if include_tests else self.test_files)
+                            exclude_tests=None if include_tests else self.test_files,
+                            file_size=self.file_size, hub_damping=self.p.hub_damping)
         t_rank = time.perf_counter()
 
         need = [sid for rf in ranked[:24] for sid, _ in rf.symbols[:4]]

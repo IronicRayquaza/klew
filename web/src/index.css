@@ -42,3 +42,23 @@ h1, h2, h3 { font-family: var(--font-display); text-wrap: balance; letter-spacin
 .eyebrow { font: 500 0.72rem/1 var(--font-mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
 :focus-visible { outline: 2px solid var(--trail); outline-offset: 2px; }
 @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+
+/* Rendered documentation (web/src/docs/*.md) */
+.doc { display: grid; gap: 1rem; line-height: 1.65; max-width: 76ch; }
+.doc > * { margin: 0; }
+.doc h1 { font-size: 2.4rem; line-height: 1.1; font-weight: 700; margin-bottom: 0.25rem; }
+.doc h2 { font-size: 1.45rem; font-weight: 700; margin-top: 1.25rem; padding-top: 1rem; border-top: 1px solid var(--line); }
+.doc h3 { font-size: 1.1rem; font-weight: 700; margin-top: 0.5rem; }
+.doc p, .doc li { color: var(--ink); }
+.doc a { color: var(--trail); text-underline-offset: 3px; }
+.doc ul, .doc ol { padding-left: 1.3rem; display: grid; gap: 0.35rem; }
+.doc ul { list-style: disc; } .doc ol { list-style: decimal; }
+.doc strong { font-weight: 600; }
+.doc code { font-family: var(--font-mono); font-size: 0.86em; background: var(--code); border: 1px solid var(--line); border-radius: 5px; padding: 0.05em 0.35em; }
+.doc pre { position: relative; background: var(--code); border: 1px solid var(--line); border-radius: 10px; padding: 0.9rem 1rem; overflow-x: auto; font-size: 0.85rem; line-height: 1.6; max-width: 100%; }
+.doc pre code { background: none; border: 0; padding: 0; font-size: inherit; }
+.doc table { width: 100%; border-collapse: collapse; font-size: 0.9rem; display: block; overflow-x: auto; }
+.doc th, .doc td { text-align: left; padding: 0.5rem 0.75rem; border-bottom: 1px solid var(--line); vertical-align: top; }
+.doc th { font: 500 0.72rem/1.2 var(--font-mono); letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+.copy-btn { position: absolute; top: 0.5rem; right: 0.5rem; font: 500 0.72rem/1 var(--font-sans); padding: 0.35rem 0.6rem; border-radius: 6px; border: 1px solid var(--line); background: var(--card); color: var(--muted); cursor: pointer; }
+.copy-btn:hover { color: var(--ink); }

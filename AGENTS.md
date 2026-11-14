@@ -65,7 +65,8 @@ Status: ✅ done · 🟡 in progress · ⬜ todo
 | `desirepath/mcp_server.py` | interface | ✅ | MCP v2 `MCPServer`, stdio: get_context, record_outcome, explain, graph_stats |
 | `desirepath/cli.py` | interface | ✅ | `index`, `context`, `learn-git`, `stats`, `eval`, `serve`, `mcp` |
 | `desirepath/api.py` | interface | ✅ | FastAPI for the dashboard (context, outcome, runs, subgraph, eval) |
-| `web/` | frontend | ✅ | Landing (`#`), Dashboard (`#app`), Results (`#results`); falls back to `public/snapshot/` without the API; checked at 390px and 1280px, light and dark |
+| `web/` | frontend | ✅ | Landing (`#`), Dashboard (`#app`), Results (`#results`), Docs (`#docs/<slug>`); falls back to `public/snapshot/` without the API; checked at 390px and 1280px, light and dark |
+| `web/src/docs/*.md` | docs | ✅ | 12-page manual (quickstart, MCP, CLI, REST API, Action, library, concepts, architecture, evaluation, integrations/plans, FAQ). Examples are real recorded outputs; regenerate them if behaviour changes |
 | `eval/results/` | eval | ✅ | final httpx + flask results (5 arms); charts in `docs/img/` |
 | `action/`, `.github/workflows/` | product | ✅ | learn-on-merge Action, example workflow, CI (ruff, pytest, live HydraDB, web build); CI not yet run on GitHub |
 | `scripts/` | tooling | ✅ | `tune.py` (held-in grid), `readme_results.py`, `snapshot_web.py` |
@@ -102,7 +103,23 @@ Status: ✅ done · 🟡 in progress · ⬜ todo
 
 ## Latest changes (newest first)
 
-- **2026-11-14 H8.5: final evals done.** Default `hops=2` (held-in grid on the first 50 httpx commits).
+- **2026-11-14 H9.5: hub damping + docs site.**
+  - Ranking divides file scores by `(1 + ln(1 + symbols))^0.5` (`EngineParams.hub_damping`, tuned on the
+    held-in slice). Final results were re-run and promoted:
+
+    | | httpx in-ctx | flask in-ctx | httpx r@5 / top-1 | flask r@5 / top-1 | tok/hit httpx |
+    |---|---|---|---|---|---|
+    | Vector RAG | 59.3% | 49.0% | 63.7% / 50.5% | 52.8% / 40.2% | 3,328 |
+    | Desirepath | 77.3% | 76.6% | 57.2% / 48.1% | 58.5% / 38.2% | 1,483 |
+    | Desirepath + vector seeds | **83.2%** | **83.9%** | **64.9% / 52.5%** | **63.9% / 44.3%** | 1,474 |
+
+  - The hybrid now beats vector RAG on every quality metric on both repos. It's slower: ~350 ms vs ~15 ms.
+    Learning alone: +7.6 pts (httpx), +6.4 pts (flask).
+  - New Docs section in the web app (`web/src/pages/Docs.tsx` + Markdown). "Read the docs" link on the landing page.
+  - `/api/repos` hides eval-internal graphs. `eval --arms` defaults to all five arms. The demo graph `flask` is indexed.
+- **2026-11-14 H9**: First push to https://github.com/IronicRayquaza/desirepath (private for now). CI is green on
+  GitHub, including the live-HydraDB contract tests (23 passed).
+- **2026-11-14 H8.5: first final evals** (superseded by H9.5's re-run with hub damping; numbers below are history). Default `hops=2` (held-in grid on the first 50 httpx commits).
 
   | | httpx in-context | flask in-context | tokens/hit (httpx) | recall@5 httpx / flask |
   |---|---|---|---|---|
@@ -117,7 +134,7 @@ Status: ✅ done · 🟡 in progress · ⬜ todo
 - **2026-11-14 H8**: Retrieval, learning, eval, and product surface are all working end to end on `encode/httpx`.
   - Indexing httpx takes 0.9s (60 files, 1,240 symbols, ~3.8k structural + 728 co-change edges). get_context
     runs ~130–300 ms with ~34 HydraDB queries.
-  - **Eval v0** (297 commits, 2k-token budget, before the seeding fixes):
+  - **Eval v0** (history, superseded; 297 commits, 2k-token budget, before the seeding fixes):
 
     | Arm | budget recall | tokens | tokens/hit | recall@5 | hit@1 |
     |---|---|---|---|---|---|
@@ -136,18 +153,26 @@ Status: ✅ done · 🟡 in progress · ⬜ todo
 
 ## Next up
 
-- **Everyone:** confirm submission rules on Discord; decide repo name/URL. The Action's `pip install
-  git+…` line and the README clone line need it.
-- **B:** record the video from `docs/VIDEO.md`; deploy `web/` (static, snapshot mode) to Vercel; real
-  Claude Code session clip using the MCP server.
-- **A (optional):** TypeScript parsing; a third eval repo; a consolidation pass (prune learned edges with
-  misses ≫ hits); push CI and make it green.
+- **B (teammate): UI pass on `web/`.** The pages are Landing `src/pages/Landing.tsx`, Dashboard
+  `src/pages/Dashboard.tsx`, Results `src/pages/Results.tsx`, and Docs `src/pages/Docs.tsx` + `src/docs/*.md`.
+  Theme tokens live in `src/index.css` (light and dark). Run it with `desirepath serve` + `cd web && npm run dev`.
+  Starting backlog:
+  - Consider leading the landing stats with the hybrid (83% right-file-in-context) instead of graph-only (77%).
+  - The Results page lists repos alphabetically (flask first); httpx first may read better.
+  - The why-path force graph clips nodes at its edges; consider fitting the view after layout (`zoomToFit`).
+  - Keep every number sourced from `eval/results/*.json` (snapshot: `scripts/snapshot_web.py`). Never hard-code results.
+  - Check at 390px and 1280px in both themes; the page must not scroll horizontally.
+- **Everyone:** confirm submission rules on Discord; make the repo public before submitting; record the
+  video (`docs/VIDEO.md`); deploy `web/` as a static site.
+- **A (optional):** TypeScript parsing, a third eval repo, pruning of learned edges with misses ≫ hits.
 
 ## Known issues / open questions
 
 - The Luma page doesn't list submission requirements. Confirm on Discord.
-- Vector RAG has the best recall@5 / top-1 on httpx. On flask the hybrid beats it on every metric. State this
-  plainly in the pitch; the headline metric is right-file-in-context at a fixed budget.
+- Graph-only Desirepath still trails vector RAG on httpx top-1/recall@5; the hybrid beats it everywhere. Say
+  so plainly in the pitch, along with the latency cost.
+- The demo `httpx` graph has a few learned outcomes from testing (e.g. 'cidr' → `_utils.py`). The landing hero
+  shows that output and says so. Re-index for a clean graph.
 - `algo.MSpaths` needs string `sourceValues`, and our ids are ints. Not used; the walker uses 1-hop expansion.
 
 ## How to evaluate

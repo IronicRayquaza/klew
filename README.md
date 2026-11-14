@@ -20,11 +20,11 @@ the graph which paths actually led to the code that changed, so the next map is 
 |---|---|---|---|---|---|---|
 | Vector RAG | 49.0% | 4,038 | 52.8% | 66.1% | 40.2% | 13 ms |
 | BM25 RAG | 55.5% | 3,213 | 58.8% | 72.0% | 40.5% | 0 ms |
-| Graph, no learning | 70.6% | 1,359 | 51.5% | 67.9% | 36.1% | 144 ms |
-| **Desirepath** | 75.9% | 1,584 | 56.0% | 72.9% | 35.8% | 340 ms |
-| **Desirepath + vector seeds** | 83.3% | 1,613 | 59.1% | 80.0% | 42.6% | 373 ms |
+| Graph, no learning | 70.2% | 1,346 | 50.0% | 67.8% | 37.2% | 149 ms |
+| **Desirepath** | 76.6% | 1,511 | 58.5% | 73.5% | 38.2% | 347 ms |
+| **Desirepath + vector seeds** | 83.9% | 1,501 | 63.9% | 81.0% | 44.3% | 381 ms |
 
-Learning alone (same graph, learning on vs off): **+5.4 points** of right-file-in-context.
+Learning alone (same graph, learning on vs off): **+6.5 points** of right-file-in-context.
 
 ![learning curve](docs/img/flask-curve.png)
 
@@ -32,13 +32,13 @@ Learning alone (same graph, learning on vs off): **+5.4 points** of right-file-i
 
 | Arm | Right file in context | Tokens per correct file | Recall@5 | Recall@10 | Top-1 | p50 latency |
 |---|---|---|---|---|---|---|
-| Vector RAG | 59.3% | 3,328 | 63.7% | 79.3% | 50.5% | 17 ms |
+| Vector RAG | 59.3% | 3,328 | 63.7% | 79.3% | 50.5% | 20 ms |
 | BM25 RAG | 49.4% | 3,626 | 57.0% | 68.7% | 42.8% | 0 ms |
-| Graph, no learning | 69.8% | 1,479 | 54.1% | 67.2% | 44.1% | 139 ms |
-| **Desirepath** | 76.1% | 1,581 | 56.8% | 70.7% | 45.1% | 327 ms |
-| **Desirepath + vector seeds** | 82.4% | 1,587 | 60.6% | 76.8% | 48.5% | 355 ms |
+| Graph, no learning | 69.7% | 1,436 | 54.5% | 67.0% | 47.1% | 158 ms |
+| **Desirepath** | 77.3% | 1,483 | 57.2% | 72.8% | 48.1% | 353 ms |
+| **Desirepath + vector seeds** | 83.2% | 1,474 | 64.9% | 80.1% | 52.5% | 382 ms |
 
-Learning alone (same graph, learning on vs off): **+6.3 points** of right-file-in-context.
+Learning alone (same graph, learning on vs off): **+7.6 points** of right-file-in-context.
 
 ![learning curve](docs/img/httpx-curve.png)
 

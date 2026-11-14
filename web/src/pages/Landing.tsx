@@ -3,21 +3,20 @@ import { Curve } from '../components/Curve'
 import { useEvalResults } from '../useEval'
 
 // Real output of `desirepath context --repo httpx "Support NO_PROXY environment variable with CIDR ranges" --budget 1200`
-// (trimmed to the first two items). Regenerate if ranking changes.
+// after one recorded outcome on this task touched httpx/_utils.py (trimmed to two items). Regenerate if ranking changes.
 const HERO_SAMPLE = `> get_context("Support NO_PROXY environment variable with CIDR ranges")
 
-## httpx/_client.py   score 9.49
-why: BaseClient._get_proxy_map → defined in httpx/_client.py
-  def _get_proxy_map( self, proxy: ProxyTypes | None, allow_env_proxies: bool ) …
-  def _init_proxy_transport( self, proxy: Proxy, verify: … ) …
-
-## httpx/_utils.py   score 5.88
-seed: name match: httpx/_utils.py
+## httpx/_utils.py   score 4.54
+seed: name match: httpx/_utils.py; learned: 'cidr' → this file
   def get_environment_proxies() -> dict[str, str | None]
       # Gets proxy information from the environment
   def is_ipv6_hostname(hostname: str) -> bool
 
-1,198 / 1,200 tokens · 262 ms`
+## httpx/_client.py   score 4.24
+why: BaseClient._get_proxy_map → defined in httpx/_client.py
+  def _get_proxy_map( self, proxy: ProxyTypes | None, allow_env_proxies: bool ) …
+
+1,198 / 1,200 tokens · 278 ms`
 
 const INSTALL = `git clone <this repo> && cd desirepath
 docker compose up -d            # local HydraDB node
@@ -97,11 +96,13 @@ export default function Landing() {
           <div className="flex flex-wrap gap-3">
             <a href="#app" className="rounded-lg bg-ink px-5 py-2.5 font-medium text-paper no-underline">Try it on httpx</a>
             <a href="#results" className="rounded-lg border border-line bg-card px-5 py-2.5 font-medium text-ink no-underline">See the evaluation</a>
+            <a href="#docs/quickstart" className="rounded-lg px-3 py-2.5 font-medium text-trail no-underline">Read the docs →</a>
           </div>
         </div>
-        <pre className="overflow-x-auto rounded-xl border border-line bg-card p-5 font-mono text-[0.8rem] leading-6 text-ink">
-{HERO_SAMPLE}
-        </pre>
+        <figure className="grid min-w-0 gap-2">
+          <pre className="overflow-x-auto rounded-xl border border-line bg-card p-5 font-mono text-[0.8rem] leading-6 text-ink">{HERO_SAMPLE}</pre>
+          <figcaption className="text-xs text-muted">Real output on httpx after one recorded outcome. The learned link from “cidr” moved the file that handles NO_PROXY to the top.</figcaption>
+        </figure>
       </section>
 
       {stats && r && (
@@ -153,7 +154,7 @@ export default function Landing() {
         <div className="grid content-start gap-3">
           <h2 className="text-3xl font-bold">Install in a minute</h2>
           <pre className="overflow-x-auto rounded-xl border border-line bg-card p-5 font-mono text-sm leading-7">{INSTALL}</pre>
-          <p className="text-sm text-muted">Add the GitHub Action and every merged PR teaches the graph, with no agent changes needed.</p>
+          <p className="text-sm text-muted">Add the <a className="text-trail" href="#docs/github-action">GitHub Action</a> and every merged PR teaches the graph, with no agent changes needed. Full setup for Claude Code, Cursor and others is in the <a className="text-trail" href="#docs/mcp">MCP docs</a>.</p>
         </div>
       </section>
 

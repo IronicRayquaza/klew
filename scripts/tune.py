@@ -16,10 +16,9 @@ from desirepath.domain.learning import LearnParams
 from desirepath.eval.replay import run_replay
 from desirepath.services.engine import EngineParams
 
+# Round 1 (learned_weight, alpha, hops) chose 1.0 / 0.35 / 2. Round 2 tunes hub damping only.
 GRID = {
-    "learned_weight": [1.0, 2.0],
-    "alpha": [0.35, 0.6],
-    "hops": [2, 3],
+    "hub_damping": [0.0, 0.25, 0.5, 0.75, 1.0],
 }
 
 
@@ -31,16 +30,16 @@ def main() -> None:
     a = ap.parse_args()
     store = HydraGraphStore()
     rows = []
-    for lw, alpha, hops in itertools.product(*GRID.values()):
-        p = EngineParams(hops=hops, learned_weight=lw, learn=replace(LearnParams(), alpha=alpha))
+    for (hub,) in itertools.product(*GRID.values()):
+        p = EngineParams(hub_damping=hub, learn=replace(LearnParams()))
         r = run_replay(store, a.repo, f"tune-{a.repo.name}", window=a.window, head=a.head,
                        reindex_every=50, arms=("graph_learn",), params=p, write=False)
         s = r["summary"]["graph_learn"]
-        rows.append({"learned_weight": lw, "alpha": alpha, "hops": hops,
+        rows.append({"hub_damping": hub,
                      "budget_recall": s["budget_recall"], "recall@5": s["recall@5"],
                      "hit@1": s["hit@1"], "p50_ms": s["p50_ms"]})
         print(json.dumps(rows[-1]), flush=True)
-    rows.sort(key=lambda x: (-x["budget_recall"], -x["recall@5"]))
+    rows.sort(key=lambda x: (-x["recall@5"], -x["budget_recall"]))
     print("\nbest:", json.dumps(rows[0]))
 
 

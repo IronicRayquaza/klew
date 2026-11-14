@@ -52,8 +52,9 @@ class Runtime:
         return rep
 
     def repos(self) -> list[dict]:
-        return sorted(self.store.list_nodes(REPO, ("repo", "root", "head", "runs")),
-                      key=lambda r: r.get("repo") or "")
+        # Only repos indexed through `desirepath index` carry a root; eval-internal graphs don't.
+        rows = self.store.list_nodes(REPO, ("repo", "root", "head", "runs"))
+        return sorted((r for r in rows if r.get("root")), key=lambda r: r.get("repo") or "")
 
     def engine(self, repo: str, root: Path | None = None) -> RepoEngine:
         with self._lock:

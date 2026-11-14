@@ -1,6 +1,7 @@
 """Ranker + Packer: walk result → ranked files → token-budgeted context pack."""
 from __future__ import annotations
 
+import math
 from collections import defaultdict
 from collections.abc import Callable
 from dataclasses import dataclass
@@ -25,7 +26,11 @@ class RankedFile:
 
 
 def rank_files(res: WalkResult, sym_file: dict[int, int], file_ids: set[int],
-               exclude_tests: set[int] | None = None) -> list[RankedFile]:
+               exclude_tests: set[int] | None = None, file_size: dict[int, int] | None = None,
+               hub_damping: float = 0.0) -> list[RankedFile]:
+    """Aggregate node relevance to files. `hub_damping` > 0 divides each file's score by
+    (1 + ln(1 + symbols in file)) ** hub_damping, so large central files (which collect relevance
+    from everywhere) don't win by default."""
     score: dict[int, float] = defaultdict(float)
     syms: dict[int, list[tuple[int, float]]] = defaultdict(list)
     for nid, v in res.visits.items():
@@ -41,6 +46,8 @@ def rank_files(res: WalkResult, sym_file: dict[int, int], file_ids: set[int],
             continue
         ss = sorted(syms[f], key=lambda x: -x[1])
         anchor = f if f in res.visits else (ss[0][0] if ss else f)
+        if hub_damping and file_size:
+            sc /= (1.0 + math.log1p(file_size.get(f, 0))) ** hub_damping
         out.append(RankedFile(f, sc, ss, anchor))
     return sorted(out, key=lambda r: -r.score)
 

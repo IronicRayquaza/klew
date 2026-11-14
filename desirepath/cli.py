@@ -71,7 +71,7 @@ def stats(repo: str = typer.Option(None)):
 def eval_(path: Path = typer.Argument(..., exists=True, file_okay=False),
           name: str = typer.Option(None), window: int = typer.Option(300),
           reindex_every: int = typer.Option(50), budget: int = typer.Option(2000),
-          arms: str = typer.Option("vector,bm25,graph_static,graph_learn"),
+          arms: str = typer.Option("vector,bm25,graph_static,graph_learn,graph_hybrid"),
           out: Path = typer.Option(Path("eval/results"))):
     """Replay git history: every arm retrieves for each commit; the learning arm learns."""
     from .eval.replay import run_replay
