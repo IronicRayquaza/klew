@@ -1,0 +1,35 @@
+# Local HydraDB node for Desirepath development.
+# Plaintext + dev token: local use only.
+services:
+  hydradb:
+    image: ghcr.io/hydra-db/hydradb:latest
+    container_name: desirepath-hydradb
+    environment:
+      CLOUD_PROVIDER: local
+      LOCAL_PATH: /tmp/graph
+      GRAPH_NAMESPACE: default
+      GRAPH_ID: default
+      GRAPH_CELL_ID: cell-0
+      GRAPH_CELLS: cell-0
+      GRAPH_NODE_ID: node-0
+      GRAPH_BOLT_ADDR: 0.0.0.0:7687
+      GRAPH_HTTP_ADDR: 0.0.0.0:8443
+      GRAPH_ADMIN_ADDR: 0.0.0.0:9090
+      GRAPH_BOLT_NODE_ADDRESSES: node-0=127.0.0.1:7687
+      GRAPH_ADVERTISED_BOLT_ADDR: 127.0.0.1:7687
+      GRAPH_DATA_CACHE_DIR: /var/cache/slatedb
+      GRAPH_AUTH_TOKEN_FILE: /run/hydradb/auth-token
+      GRAPH_ALLOW_PLAINTEXT: "true"
+      GRAPH_USAGE_REPORT_ENABLED: "false"
+      RUST_MIN_STACK: "33554432"
+      RUST_LOG: info
+      GRAPH_CYPHER_ENGINE: ${GRAPH_CYPHER_ENGINE:-legacy}
+    ports:
+      - "7687:7687"
+      - "8443:8443"
+      - "9090:9090"
+    volumes:
+      - hydradb-store:/tmp/graph
+      - ./.hydradb/auth-token:/run/hydradb/auth-token:ro
+volumes:
+  hydradb-store:

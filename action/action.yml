@@ -1,0 +1,35 @@
+name: Desirepath learn
+description: Teach a Desirepath code graph from a merged pull request.
+author: Desirepath
+branding: { icon: git-merge, color: orange }
+inputs:
+  hydra-uri:
+    description: Bolt URI of the team's HydraDB node (e.g. neo4j+s://graph.example.com:7687)
+    required: true
+  hydra-token:
+    description: HydraDB bearer token
+    required: true
+  repo-key:
+    description: Graph key for this repository (defaults to the repository name)
+    required: false
+    default: ${{ github.event.repository.name }}
+  reindex:
+    description: Re-index structure before learning (true/false)
+    required: false
+    default: "true"
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-python@v5
+      with: { python-version: "3.12" }
+    - shell: bash
+      run: pip install "desirepath @ git+https://github.com/${{ github.action_repository || github.repository }}"
+    - shell: bash
+      env:
+        HYDRA_URI: ${{ inputs.hydra-uri }}
+        HYDRA_TOKEN: ${{ inputs.hydra-token }}
+      run: |
+        if [ "${{ inputs.reindex }}" = "true" ]; then
+          desirepath index . --name "${{ inputs.repo-key }}" --history 500
+        fi
+        desirepath learn-git "${{ github.event.pull_request.merge_commit_sha || github.sha }}" --repo "${{ inputs.repo-key }}"
