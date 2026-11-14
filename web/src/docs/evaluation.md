@@ -21,7 +21,7 @@ order:
 |---|---|
 | Vector RAG | `bge-small-en-v1.5` embeddings over 40-line chunks, cosine top-k, packed to the budget (local, via fastembed) |
 | BM25 RAG | BM25 over the same chunks |
-| Graph, no learning | Klew's graph and walk, with learning switched off (the continual-learning baseline) |
+| Klew, learning off | Klew's graph and walk, with learning switched off (the continual-learning baseline) |
 | Klew without graph traversal | Klew with the graph walk and companions switched off: same seeds, learning and text fusion. This isolates what walking the HydraDB graph adds |
 | Klew | the graph, learning from every replayed commit |
 | Klew + vector seeds | the same, with the vector index as an extra seed source |

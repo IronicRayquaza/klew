@@ -197,6 +197,7 @@ def run_replay(store: GraphStore, repo_root: Path, name: str, *, window: int = 3
         "summary": summary, "curves": curves(records, arms),
         "tuned_on_first": tuned_on, "held_out_commits": len(held_out),
         "summary_held_out": summary_held_out,
+        "agent_view_held_out": agent_view([asdict(r) for r in held_out], arms) if held_out and "vector" in arms else None,
         "params": asdict(params or EngineParams()), "warm_start": warm,
         "runtime_s": round(time.perf_counter() - t_start, 1), "reindex_s": round(reindex_s, 1),
         "records": [asdict(r) for r in records],
@@ -206,6 +207,29 @@ def run_replay(store: GraphStore, repo_root: Path, name: str, *, window: int = 3
         (out_dir / f"{name}.json").write_text(json.dumps(result, indent=1))
     remove_worktree(repo_root, snap)
     return result
+
+
+def agent_view(records: list[dict], arms, baseline: str = "vector") -> dict:
+    """What a ranking difference means for the agent, per arm vs the baseline:
+    - top1_lost: commits where the baseline ranked a changed file #1 and this arm did not;
+    - top1_lost_in_pack: of those, how often this arm still put a changed file in the pack;
+    - top1_lost_median_rank: where that file sat in this arm's ranking;
+    - none_in_context: commits where the agent got none of the changed files."""
+    import statistics as _st
+    out = {}
+    n = len(records)
+    base_none = sum(1 for r in records if r["arms"][baseline]["budget_recall"] == 0)
+    for a in arms:
+        if a == baseline:
+            continue
+        lost = [r for r in records if r["arms"][baseline]["hit@1"] == 1 and r["arms"][a]["hit@1"] == 0]
+        in_pack = sum(1 for r in lost if r["arms"][a]["budget_recall"] > 0)
+        ranks = [next((i + 1 for i, p in enumerate(r["arms"][a]["top"]) if p in r["truth"]), None) for r in lost]
+        ranks = [x for x in ranks if x]
+        out[a] = {"top1_lost": len(lost), "top1_lost_in_pack": in_pack,
+                  "top1_lost_median_rank": _st.median(ranks) if ranks else None,
+                  "none_in_context": sum(1 for r in records if r["arms"][a]["budget_recall"] == 0)}
+    return {"baseline": baseline, "commits": n, "baseline_none_in_context": base_none, "arms": out}
 
 
 def summarize(records: list[CommitRecord], arms) -> dict:

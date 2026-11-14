@@ -14,6 +14,11 @@ the graph which paths actually led to the code that changed, so the next map is 
 <!-- RESULTS:START -->
 ## Results
 
+**How to read these numbers.** *Right file in context*: share of changed files inside the 2,000-token
+pack, which is what the agent reads (our headline). *Tokens per correct file*: context tokens spent per
+changed file found (lower is cheaper). *Recall@5*: share of changed files in the top five. *Top-1*: how
+often the #1 file changed. *MRR*: 1 if the first correct file is #1, ½ at #2, ⅓ at #3, and so on.
+
 Every number below is on **held-out commits**: the first 100 commits of each window were used for
 tuning (`scripts/tune.py`), and these are the rest. Every approach gets the same 2,000-token budget.
 
@@ -30,6 +35,7 @@ tuning (`scripts/tune.py`), and these are the rest. Every approach gets the same
 
 - **Learning** (same graph, learning off vs on): +6.2 pts right file in context.
 - **Graph traversal** (Klew with vs without the walk): +1.9 pts right file in context, -8.6 pts top-1.
+- **Where vector RAG ranks higher** (top-1 47.2% vs 43.7%, MRR 62.2% vs 60.7%), it is about order, not speed or coverage: on the 30 commits where vector RAG was right at #1 and Klew + vector seeds was not, the right file was still in Klew's pack 30 times, typically at #2. The agent got none of the changed files from vector RAG on 47 of 199 commits, and from Klew + vector seeds on 2.
 
 **Accuracy as the graph learns** (learn from N past commits, then freeze; held-out): right file in context 82.1% → 89.1%, recall@5 57.1% → 62.0%, MRR 55.5% → 58.1% from 0 to 600 commits learned.
 
@@ -50,6 +56,7 @@ tuning (`scripts/tune.py`), and these are the rest. Every approach gets the same
 
 - **Learning** (same graph, learning off vs on): +4.7 pts right file in context.
 - **Graph traversal** (Klew with vs without the walk): +5.4 pts right file in context, -7.2 pts top-1.
+- **Ranking in practice:** on the 13 commits where vector RAG was right at #1 and Klew + vector seeds was not, the right file was still in Klew's pack 13 times, typically at #2. The agent got none of the changed files from vector RAG on 80 of 196 commits, and from Klew + vector seeds on 11.
 
 **Accuracy as the graph learns** (learn from N past commits, then freeze; held-out): right file in context 85.2% → 87.7%, recall@5 52.4% → 55.3%, MRR 48.5% → 51.8% from 0 to 600 commits learned.
 

@@ -35153,5 +35153,42 @@
     }
    }
   }
- ]
+ ],
+ "agent_view_held_out": {
+  "baseline": "vector",
+  "commits": 199,
+  "baseline_none_in_context": 47,
+  "arms": {
+   "bm25": {
+    "top1_lost": 34,
+    "top1_lost_in_pack": 21,
+    "top1_lost_median_rank": 3,
+    "none_in_context": 67
+   },
+   "graph_static": {
+    "top1_lost": 34,
+    "top1_lost_in_pack": 30,
+    "top1_lost_median_rank": 2,
+    "none_in_context": 25
+   },
+   "graph_nowalk": {
+    "top1_lost": 26,
+    "top1_lost_in_pack": 23,
+    "top1_lost_median_rank": 2.0,
+    "none_in_context": 16
+   },
+   "graph_learn": {
+    "top1_lost": 34,
+    "top1_lost_in_pack": 31,
+    "top1_lost_median_rank": 2.0,
+    "none_in_context": 14
+   },
+   "graph_hybrid": {
+    "top1_lost": 30,
+    "top1_lost_in_pack": 30,
+    "top1_lost_median_rank": 2.0,
+    "none_in_context": 2
+   }
+  }
+ }
 }

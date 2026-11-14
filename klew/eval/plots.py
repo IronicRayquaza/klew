@@ -4,7 +4,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-LABEL = {"vector": "Vector RAG", "bm25": "BM25 RAG", "graph_static": "Graph, no learning", "graph_nowalk": "Klew without graph traversal",
+LABEL = {"vector": "Vector RAG", "bm25": "BM25 RAG", "graph_static": "Klew, learning off", "graph_nowalk": "Klew without graph traversal",
          "graph_learn": "Klew", "graph_hybrid": "Klew + vector seeds"}
 COLOR = {"vector": "#3c6e91", "bm25": "#8a99a3", "graph_static": "#b9c4ca", "graph_nowalk": "#d9a7a0",
          "graph_learn": "#b8741a", "graph_hybrid": "#2e7556"}

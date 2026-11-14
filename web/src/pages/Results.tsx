@@ -42,6 +42,57 @@ function Table({ r, summary }: { r: EvalResult; summary: Record<string, ArmSumma
   )
 }
 
+const ARM_FOR_NOTE = 'graph_hybrid'
+
+function RankingNote({ r, summary }: { r: EvalResult; summary: Record<string, ArmSummary> }) {
+  const v = summary.vector, k = summary[ARM_FOR_NOTE], av = r.agent_view_held_out
+  if (!v || !k || !av || !av.arms[ARM_FOR_NOTE]) return null
+  const behind = v['hit@1'] > k['hit@1'] || v.mrr > k.mrr
+  const a = av.arms[ARM_FOR_NOTE]
+  const pct = (x: number) => `${(x * 100).toFixed(1)}%`
+  return (
+    <div className="grid gap-1.5 rounded-xl border border-line bg-card p-4 text-sm">
+      <h3 className="font-bold">{behind ? 'Where vector RAG ranks higher' : 'Ranking in practice'}</h3>
+      {behind && (
+        <p className="text-muted">
+          On {r.repo}, vector RAG puts a changed file at #1 more often (top-1 {pct(v['hit@1'])} vs {pct(k['hit@1'])}, MRR {pct(v.mrr)} vs {pct(k.mrr)}).
+          That is about the order of the list, not about speed or coverage.
+        </p>
+      )}
+      <p className="text-muted">
+        On the {av.commits} held-out commits, vector RAG was right at #1 and Klew + vector seeds was not on <b className="text-ink">{a.top1_lost}</b> commits.
+        In <b className="text-ink">{a.top1_lost_in_pack} of {a.top1_lost}</b> of them the right file was still in Klew's pack{a.top1_lost_median_rank ? <>, typically at <b className="text-ink">#{a.top1_lost_median_rank}</b></> : null}.
+        The agent got <b className="text-ink">none</b> of the changed files from vector RAG on <b className="text-ink">{av.baseline_none_in_context}</b> of {av.commits} commits, and from Klew + vector seeds on <b className="text-ink">{a.none_in_context}</b>.
+      </p>
+      <p className="text-muted">Latency doesn't depend on ranking order: Klew takes about 0.2–0.4 s per request either way.</p>
+    </div>
+  )
+}
+
+function HowToRead() {
+  const rows: [string, string][] = [
+    ['Right file in context', 'Share of the changed files that made it into the 2,000-token pack. This is what the agent actually reads, so it is our headline metric.'],
+    ['Tokens per correct file', 'Context tokens spent for each changed file that made it in. Lower means cheaper.'],
+    ['Recall@5', 'Share of the changed files that appear in the top five, ignoring the budget.'],
+    ['Top-1', 'How often the #1 file is one that changed. It matters most for a single-answer search box; an agent reads the whole pack.'],
+    ['MRR', 'Mean reciprocal rank: 1 if the first correct file is #1, ½ at #2, ⅓ at #3, and so on. It rewards putting the right file first.'],
+    ['p50 latency', 'Median time per request. It depends on how many graph queries run, not on the ranking order.'],
+  ]
+  return (
+    <section className="grid gap-3 rounded-xl border border-line bg-card p-5">
+      <h2 className="text-xl font-bold">How to read these numbers</h2>
+      <dl className="grid gap-x-6 gap-y-2 text-sm sm:grid-cols-[max-content_1fr]">
+        {rows.map(([t, d]) => (
+          <div key={t} className="contents">
+            <dt className="font-medium">{t}</dt>
+            <dd className="text-muted">{d}</dd>
+          </div>
+        ))}
+      </dl>
+    </section>
+  )
+}
+
 export default function Results() {
   const { results, learning, source, error } = useEvalResults()
   const [metric, setMetric] = useState<'budget_recall' | 'recall@5'>('budget_recall')
@@ -59,6 +110,7 @@ export default function Results() {
           commits, so nothing sees the future.
         </p>
       </header>
+      <HowToRead />
       {error && <p className="text-alarm">Could not load results: {error}</p>}
       {!results && !error && <p className="text-muted">Loading results…</p>}
       {ordered?.map((r) => {
@@ -90,12 +142,19 @@ export default function Results() {
           </div>
           <div className="rounded-xl border border-line bg-card p-4"><Curve result={r} metric={metric} /></div>
           {r.summary_held_out && (
-            <label className="flex items-center gap-2 text-sm text-muted">
-              <input id={`held-${r.repo}`} type="checkbox" checked={heldOut} onChange={(e) => setHeldOut(e.target.checked)} />
-              Show only the {r.held_out_commits} held-out commits (the first {r.tuned_on_first} were used for tuning)
-            </label>
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
+              <span className="text-muted">
+                {useHeld
+                  ? <>Showing <b className="text-ink">{r.held_out_commits} held-out commits</b>: none of them were used to choose any setting. The first {r.tuned_on_first} commits were used for tuning.</>
+                  : <>Showing <b className="text-ink">all {r.scored} commits</b>, including the {r.tuned_on_first} used for tuning (slightly favourable to Klew).</>}
+              </span>
+              <button type="button" onClick={() => setHeldOut(!useHeld)} className="rounded-md border border-line px-2.5 py-1 text-xs text-ink hover:bg-card">
+                {useHeld ? `Show all ${r.scored}` : `Show only the ${r.held_out_commits} held-out commits`}
+              </button>
+            </div>
           )}
           <Table r={r} summary={summary} />
+          <RankingNote r={r} summary={summary} />
           <div className="grid gap-4 md:grid-cols-2">
             {learnGain !== null && (
               <div className="grid content-start gap-2 rounded-xl border border-line bg-card p-4">
@@ -125,10 +184,8 @@ export default function Results() {
         )
       })}
       <section className="grid gap-3 text-sm text-muted">
-        <h3 className="text-lg font-bold text-ink">How to read this, and its limits</h3>
+        <h3 className="text-lg font-bold text-ink">Limits</h3>
         <ul className="grid list-disc gap-1.5 pl-5">
-          <li><b className="text-ink">Right file in context</b>: the share of changed files that made it into the 2,000-token context. This is what an agent actually reads.</li>
-          <li><b className="text-ink">Recall@5</b>: the share of changed files among the top five ranked files, ignoring budget.</li>
           <li>Commit messages are terser than real agent prompts, and we score Python files only.</li>
           <li>Parameters were tuned on the first 50 commits of the first repository only.</li>
           <li>Reproduce with <code className="rounded bg-code px-1.5 font-mono">klew eval path/to/repo --window 300</code>.</li>

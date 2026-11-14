@@ -22,6 +22,10 @@ def table(summary: dict, arms: list[str]) -> list[str]:
 
 def block(results: list[dict], curves: dict[str, dict]) -> str:
     out = ["## Results", "",
+           "**How to read these numbers.** *Right file in context*: share of changed files inside the 2,000-token",
+           "pack, which is what the agent reads (our headline). *Tokens per correct file*: context tokens spent per",
+           "changed file found (lower is cheaper). *Recall@5*: share of changed files in the top five. *Top-1*: how",
+           "often the #1 file changed. *MRR*: 1 if the first correct file is #1, ½ at #2, ⅓ at #3, and so on.", "",
            "Every number below is on **held-out commits**: the first 100 commits of each window were used for",
            "tuning (`scripts/tune.py`), and these are the rest. Every approach gets the same 2,000-token budget.", ""]
     for r in sorted(results, key=lambda d: d["repo"] != "httpx"):
@@ -34,6 +38,17 @@ def block(results: list[dict], curves: dict[str, dict]) -> str:
             out.append(f"- **Graph traversal** (Klew with vs without the walk): "
                        f"{(s['graph_learn']['budget_recall'] - s['graph_nowalk']['budget_recall']) * 100:+.1f} pts right file in context, "
                        f"{(s['graph_learn']['hit@1'] - s['graph_nowalk']['hit@1']) * 100:+.1f} pts top-1.")
+        av = r.get("agent_view_held_out")
+        if av and "graph_hybrid" in av["arms"] and "vector" in s:
+            a = av["arms"]["graph_hybrid"]
+            behind = s["vector"]["hit@1"] > s["graph_hybrid"]["hit@1"] or s["vector"]["mrr"] > s["graph_hybrid"]["mrr"]
+            lead = (f"- **Where vector RAG ranks higher** (top-1 {s['vector']['hit@1']:.1%} vs {s['graph_hybrid']['hit@1']:.1%}, "
+                    f"MRR {s['vector']['mrr']:.1%} vs {s['graph_hybrid']['mrr']:.1%}), it is about order, not speed or coverage: "
+                    if behind else "- **Ranking in practice:** ")
+            out.append(lead + f"on the {a['top1_lost']} commits where vector RAG was right at #1 and Klew + vector seeds was not, "
+                       f"the right file was still in Klew's pack {a['top1_lost_in_pack']} times, typically at "
+                       f"#{a['top1_lost_median_rank']:.0f}. The agent got none of the changed files from vector RAG on "
+                       f"{av['baseline_none_in_context']} of {av['commits']} commits, and from Klew + vector seeds on {a['none_in_context']}.")
         c = curves.get(r["repo"])
         if c:
             p0, pn = c["points"][0], c["points"][-1]

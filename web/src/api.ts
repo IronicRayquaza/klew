@@ -27,6 +27,10 @@ export type EvalResult = {
   summary_held_out?: Record<string, ArmSummary> | null
   tuned_on_first?: number
   held_out_commits?: number
+  agent_view_held_out?: {
+    baseline: string; commits: number; baseline_none_in_context: number
+    arms: Record<string, { top1_lost: number; top1_lost_in_pack: number; top1_lost_median_rank: number | null; none_in_context: number }>
+  } | null
   curves: Record<string, { 'recall@5': number[]; budget_recall: number[] }>
   runtime_s: number
 }
@@ -78,7 +82,7 @@ export async function backendUp(): Promise<boolean> {
 export const ARM_LABEL: Record<string, string> = {
   vector: 'Vector RAG',
   bm25: 'BM25 RAG',
-  graph_static: 'Graph, no learning',
+  graph_static: 'Klew, learning off',
   graph_nowalk: 'Klew without graph traversal',
   graph_learn: 'Klew',
   graph_hybrid: 'Klew + vector seeds',
