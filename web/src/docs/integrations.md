@@ -1,6 +1,6 @@
 # Integrations and plans
 
-Desirepath is one engine with several front doors. Pick the one that fits how your team works.
+Klew is one engine with several front doors. Pick the one that fits how your team works.
 
 ## What ships today
 
@@ -20,7 +20,7 @@ Desirepath is one engine with several front doors. Pick the one that fits how yo
 | TypeScript and Go parsing | the graph model is language-agnostic; only the tree-sitter reader is Python-specific today |
 | Hosted team graph | one learned graph per repository, shared by the whole team |
 | Editor extension | context and why-paths beside the code, without an agent |
-| PyPI package | `pip install desirepath` instead of installing from source |
+| PyPI package | `pip install klew` instead of installing from source |
 
 ## Who it's for
 
@@ -29,7 +29,7 @@ fit in a prompt. The buyer is whoever owns developer productivity, or the agent 
 
 ## Why teams would pay
 
-- **Token spend.** In our replay, Desirepath spends about half the context tokens per correct file
+- **Token spend.** In our replay, Klew spends about half the context tokens per correct file
   compared with vector RAG. That's input you stop paying for on every agent call.
 - **Agent success.** The right file is in context far more often, so agents spend fewer turns looking.
 - **It compounds.** Every merge makes the graph better for everyone. A shared team graph is an asset that

@@ -1,6 +1,6 @@
 # REST API
 
-`desirepath serve` starts a FastAPI server on `http://127.0.0.1:8000`. Interactive docs are at `/docs`,
+`klew serve` starts a FastAPI server on `http://127.0.0.1:8000`. Interactive docs are at `/docs`,
 and the OpenAPI schema is at `/openapi.json`. The dashboard uses this API, and you can too.
 
 ## Endpoints
@@ -67,7 +67,8 @@ curl -s -X POST http://127.0.0.1:8000/api/context \
 Recorded during development; scores and timings change as the graph learns. Trimmed for length: the real response has more items and full symbols and snippets. A pack can use less
 than the budget when the remaining candidates score too low to be worth the tokens.
 
-`budget_tokens` must be between 200 and 32,000. If nothing in the graph matches the task, the response
+`budget_tokens` must be between 200 and 32,000. The optional `cutoff` (0–1) stops adding files once they score
+below that fraction of the top file; the measured trade-off is in the [CLI reference](#docs/cli). If nothing in the graph matches the task, the response
 has `abstained: true` and no items. A wrong answer would cost more than no answer.
 
 ## Record an outcome
@@ -94,4 +95,4 @@ curl -s -X POST http://127.0.0.1:8000/api/outcome \
 were touched but never served, so new links are created toward them.
 
 Runs are kept in memory by the server that created them. To learn from a run created elsewhere, use
-`desirepath learn-git` or the [Python library](#docs/library).
+`klew learn-git` or the [Python library](#docs/library).

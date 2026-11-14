@@ -1,0 +1,57 @@
+{
+ "repo": "flask",
+ "window": 300,
+ "tuned_on_first": 100,
+ "held_out_commits": 196,
+ "first_commit": "a44c7228600044f530856a33c7da147c528644ff",
+ "points": [
+  {
+   "learned": 0,
+   "learning": false,
+   "budget_recall": 0.8516,
+   "recall@5": 0.5238,
+   "hit@1": 0.352,
+   "mrr": 0.485
+  },
+  {
+   "learned": 50,
+   "learning": true,
+   "budget_recall": 0.8253,
+   "recall@5": 0.534,
+   "hit@1": 0.3571,
+   "mrr": 0.4991
+  },
+  {
+   "learned": 100,
+   "learning": true,
+   "budget_recall": 0.863,
+   "recall@5": 0.5429,
+   "hit@1": 0.3622,
+   "mrr": 0.5011
+  },
+  {
+   "learned": 200,
+   "learning": true,
+   "budget_recall": 0.8684,
+   "recall@5": 0.5513,
+   "hit@1": 0.3622,
+   "mrr": 0.5042
+  },
+  {
+   "learned": 400,
+   "learning": true,
+   "budget_recall": 0.8776,
+   "recall@5": 0.5674,
+   "hit@1": 0.3827,
+   "mrr": 0.5173
+  },
+  {
+   "learned": 600,
+   "learning": true,
+   "budget_recall": 0.877,
+   "recall@5": 0.5526,
+   "hit@1": 0.3878,
+   "mrr": 0.5183
+  }
+ ]
+}

@@ -19,9 +19,9 @@ import json
 from dataclasses import replace
 from pathlib import Path
 
-from desirepath.adapters.hydra_store import HydraGraphStore
-from desirepath.eval.replay import run_replay
-from desirepath.services.engine import EngineParams
+from klew.adapters.hydra_store import HydraGraphStore
+from klew.eval.replay import run_replay
+from klew.services.engine import EngineParams
 
 
 def main() -> None:
@@ -44,7 +44,7 @@ def main() -> None:
                        reindex_every=50, arms=(a.arm,), params=p, write=False, warm=warm)
         s = r["summary"][a.arm]
         rows.append({**combo, "warm": warm, "budget_recall": s["budget_recall"],
-                     "recall@5": s["recall@5"], "hit@1": s["hit@1"],
+                     "recall@5": s["recall@5"], "hit@1": s["hit@1"], "mrr": s["mrr"],
                      "tokens": s["tokens_mean"], "p50_ms": s["p50_ms"]})
         print(json.dumps(rows[-1]), flush=True)
     rows.sort(key=lambda x: (-x["budget_recall"], -x["recall@5"]))

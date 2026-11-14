@@ -10,11 +10,11 @@ Python today. The graph model and the learning are language-agnostic; adding a l
 tree-sitter reader.
 
 **What happens when the code changes?**
-Re-run `desirepath index` (the GitHub Action does it on every merge). Structure is rebuilt from the code;
+Re-run `klew index` (the GitHub Action does it on every merge). Structure is rebuilt from the code;
 learned edges are kept.
 
 **What if nothing matches the task?**
-Desirepath abstains: it returns no items and says so. It would rather give the agent nothing than send it
+Klew abstains: it returns no items and says so. It would rather give the agent nothing than send it
 somewhere wrong.
 
 **Can a bad run poison the graph?**
@@ -22,14 +22,15 @@ Learning is bounded. Weights stay between 0 and 1, each outcome moves them by a 
 that keep being served but not touched decay, and sweeping changes of more than 12 files are skipped.
 
 **Does it replace vector search?**
-It doesn't have to. On its own, Desirepath beats vector RAG at getting the right files into a fixed budget.
-With vector results as extra seeds, it beats vector RAG on every quality metric we measure, including which
-file it ranks first. The cost is latency: about half a second per request versus about 15 ms for a vector lookup. See [Evaluation](#docs/evaluation).
+It doesn't have to. On held-out commits Klew gets the changed file into the agent's context far more
+often than vector RAG (89–95% vs 45–58%), at about half the tokens per correct file. With vector results
+as extra seeds it also beats vector RAG on recall@5 on both repositories, and on top-1 and MRR on flask.
+On httpx, vector RAG is still ahead on top-1 (47.2% vs 43.7%) and MRR (62.2% vs 60.7%). The cost is latency: about 0.2–0.4 s per request versus about 15 ms for a
+vector lookup. See [Evaluation](#docs/evaluation).
 
 **How fast is it?**
 On httpx (60 files, 1,240 symbols), indexing takes about a second and a context pack takes about
-about half a second (median 555 ms on a laptop) using 25 HydraDB queries. Making the walk faster is
-next on our list.
+about 0.2–0.3 s on a laptop, using 25 HydraDB queries that run in parallel within each hop.
 
 **Is it production-ready?**
 It's a hackathon build with tests, CI and an evaluation harness. The local setup uses HydraDB's plaintext

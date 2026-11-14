@@ -1,6 +1,6 @@
 @import "tailwindcss";
 
-/* Desirepath: a trail map of your codebase. Cool map-paper neutrals, ink blue, trail ochre, moss for "learned". */
+/* Klew: a trail map of your codebase. Cool map-paper neutrals, ink blue, trail ochre, moss for "learned". */
 @theme {
   --font-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
   --font-sans: "Instrument Sans", "Segoe UI", system-ui, sans-serif;

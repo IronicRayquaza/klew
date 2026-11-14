@@ -31,7 +31,7 @@ export default function App() {
       <header className="sticky top-0 z-20 border-b border-line bg-paper/90 backdrop-blur">
         <nav className="mx-auto flex max-w-6xl items-center gap-3 px-4 py-3 sm:gap-6 sm:px-6">
           <a href="#" className="flex items-center gap-2 font-display text-lg font-bold text-ink no-underline">
-            <Logo /> <span className="hidden sm:inline">Desirepath</span>
+            <Logo /> <span className="hidden sm:inline">Klew</span>
           </a>
           <div className="ml-auto flex items-center gap-0.5 text-sm sm:gap-1">
             {(Object.keys(ROUTES) as Route[]).map((r) => (

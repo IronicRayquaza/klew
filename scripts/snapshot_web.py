@@ -8,7 +8,7 @@ import argparse
 import json
 from pathlib import Path
 
-from desirepath.runtime import get_runtime
+from klew.runtime import get_runtime
 
 TASKS = [
     "Support NO_PROXY environment variable with CIDR ranges",
@@ -31,6 +31,8 @@ def main() -> None:
         (a.out / f"eval-{p.stem}.json").write_text(json.dumps(d))
         names.append(p.stem)
     (a.out / "eval-index.json").write_text(json.dumps(names))
+    curves = [json.loads(p.read_text()) for p in sorted((a.results / "learning").glob("*.json"))]
+    (a.out / "learning.json").write_text(json.dumps(curves))
     eng = get_runtime().engine(a.repo)
     packs = [eng.get_context(t, 2000, record=False).model_dump() for t in TASKS]
     (a.out / "packs.json").write_text(json.dumps(packs))

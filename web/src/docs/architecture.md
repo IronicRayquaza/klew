@@ -11,21 +11,21 @@ adapters     HydraGraphStore (Bolt) · MemoryGraphStore · tree-sitter reader ·
 - The domain never imports a driver; it only sees `GraphStore`.
 - The same contract test runs against HydraDB and the in-memory store, so the HydraDB adapter is checked
   against a reference implementation in CI, on a real HydraDB node.
-- Every Cypher statement lives in one file, `desirepath/adapters/queries.py`.
+- Every Cypher statement lives in one file, `klew/adapters/queries.py`.
 
 ## How we use HydraDB
 
 | Need | How |
 |---|---|
 | Typed code graph | five node labels and nine edge types (see [How it works](#docs/concepts)) |
-| Bulk writes | `UNWIND $rows AS row MERGE (n {id: row.id}) SET n:DpSymbol, …` in batches of 1,000; edges `MERGE` with a deterministic edge id, so every write is idempotent |
-| Traversal | one anchored 1-hop expansion per edge type and direction: `MATCH (a:DpSymbol)<-[r:CALLS]-(b) WHERE a.id IN $ids RETURN a.id, b.id, r.w` |
+| Bulk writes | `UNWIND $rows AS row MERGE (n {id: row.id}) SET n:KlewSymbol, …` in batches of 1,000; edges `MERGE` with a deterministic edge id, so every write is idempotent |
+| Traversal | one anchored 1-hop expansion per edge type and direction: `MATCH (a:KlewSymbol)<-[r:CALLS]-(b) WHERE a.id IN $ids RETURN a.id, b.id, r.w` |
 | Learning | weights written back in place with batched `MERGE … SET r.w, r.hits, r.misses` |
-| Audit trail | each request is a `DpRun` node with `SERVED` and `TOUCHED` edges |
+| Audit trail | each request is a `KlewRun` node with `SERVED` and `TOUCHED` edges |
 | Explanations | `algo.SPpaths` is available through `GraphStore.shortest_paths` |
 
-A context pack on a warm-started httpx graph takes 25 queries and about half a second on a laptop
-(median 555 ms, range 329–643 ms). Indexing writes about
+A context pack on a warm-started httpx graph takes 25 queries and about 0.2–0.3 s on a laptop. Each hop's
+queries run in parallel, one Bolt session per thread (before that change: median 540 ms). Indexing writes about
 30,000 vertices per second.
 
 ## HydraDB dialect notes

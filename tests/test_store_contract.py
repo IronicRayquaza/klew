@@ -1,6 +1,6 @@
-"""Both GraphStore implementations must agree. Run with DP_TEST_HYDRA=1 to include HydraDB."""
-from desirepath import ids
-from desirepath.schema import CALLS, CONTAINS, FILE, POINTS_TO, REPO, SYMBOL, TERM
+"""Both GraphStore implementations must agree. Run with KLEW_TEST_HYDRA=1 to include HydraDB."""
+from klew import ids
+from klew.schema import CALLS, CONTAINS, FILE, POINTS_TO, REPO, SYMBOL, TERM
 
 
 def seed(store, repo):

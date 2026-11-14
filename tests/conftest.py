@@ -3,13 +3,13 @@ import uuid
 
 import pytest
 
-from desirepath.adapters.memory_store import MemoryGraphStore
+from klew.adapters.memory_store import MemoryGraphStore
 
-HYDRA = os.environ.get("DP_TEST_HYDRA") == "1"
+HYDRA = os.environ.get("KLEW_TEST_HYDRA") == "1"
 
 
 def _hydra():
-    from desirepath.adapters.hydra_store import HydraGraphStore
+    from klew.adapters.hydra_store import HydraGraphStore
     return HydraGraphStore()
 
 

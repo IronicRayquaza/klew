@@ -1,6 +1,6 @@
 # MCP server
 
-`desirepath mcp` runs a [Model Context Protocol](https://modelcontextprotocol.io) server over stdio. Run it
+`klew mcp` runs a [Model Context Protocol](https://modelcontextprotocol.io) server over stdio. Run it
 from inside the repository you're working on. If that repository isn't indexed yet, it indexes it on first
 start (about a second for 60 files), then warms up so the first call is as fast as the rest.
 
@@ -8,7 +8,7 @@ start (about a second for 60 files), then warms up so the first call is as fast 
 
 ```bash
 cd ~/code/your-repo
-claude mcp add desirepath -- /path/to/desirepath/.venv/bin/desirepath mcp
+claude mcp add klew -- /path/to/klew/.venv/bin/klew mcp
 ```
 
 ## Cursor, Windsurf and other clients
@@ -18,10 +18,10 @@ Add a server entry to the client's MCP config. For Cursor that's `.cursor/mcp.js
 ```json
 {
   "mcpServers": {
-    "desirepath": {
-      "command": "/path/to/desirepath/.venv/bin/desirepath",
+    "klew": {
+      "command": "/path/to/klew/.venv/bin/klew",
       "args": ["mcp"],
-      "env": { "DP_REPO_ROOT": "/absolute/path/to/your-repo" }
+      "env": { "KLEW_REPO_ROOT": "/absolute/path/to/your-repo" }
     }
   }
 }
@@ -31,7 +31,7 @@ Add a server entry to the client's MCP config. For Cursor that's `.cursor/mcp.js
 
 | Tool | Arguments | What it does |
 |---|---|---|
-| `get_context` | `task: str`, `budget_tokens: int = 2000` | Returns the files most likely to matter for the task, each with its why-path, signatures and a snippet, inside the budget. Starts with a `run_id`. |
+| `get_context` | `task: str`, `budget_tokens: int = 2000`, `cutoff: float = 0` | Returns the files most likely to matter for the task, each with its why-path, signatures and a snippet, inside the budget. Starts with a `run_id`. `cutoff` stops early on weak candidates to save tokens ([trade-off](#docs/cli)). |
 | `record_outcome` | `run_id: int`, `touched_files: list[str] \| None` | Tells the graph which files the run changed. Without `touched_files`, it uses the working tree's changed `.py` files from `git status`. Returns what it learned. |
 | `explain` | `task: str`, `path: str` | Shows the learned links from the task's words to that file, with weights, hits and misses. |
 | `graph_stats` | none | Counts of files, symbols, learned terms, runs, and edges by type. |
@@ -66,8 +66,8 @@ The server also sends these instructions to the agent: call `get_context` before
 
 | Variable | Default | Meaning |
 |---|---|---|
-| `DP_REPO_ROOT` | current directory | Repository to serve |
-| `DP_REPO` | directory name | Graph key for the repository |
+| `KLEW_REPO_ROOT` | current directory | Repository to serve |
+| `KLEW_REPO` | directory name | Graph key for the repository |
 | `HYDRA_URI` | `bolt://127.0.0.1:7687` | HydraDB Bolt endpoint |
 | `HYDRA_TOKEN` | local development token | HydraDB bearer token |
 | `HYDRA_GRAPH` | `default` | HydraDB graph id |

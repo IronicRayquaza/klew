@@ -2,27 +2,27 @@ import { useMemo, useState } from 'react'
 import { Curve } from '../components/Curve'
 import { useEvalResults } from '../useEval'
 
-// Real output of `desirepath context --repo httpx "Support NO_PROXY environment variable with CIDR ranges" --budget 1200`
-// right after `desirepath index` (warm start learned from 268 past commits). Trimmed to two items.
+// Real output of `klew context --repo httpx "Support NO_PROXY environment variable with CIDR ranges" --budget 1200`
+// right after `klew index` (warm start learned from 268 past commits). Trimmed to two items.
 const HERO_SAMPLE = `> get_context("Support NO_PROXY environment variable with CIDR ranges")
 
-## httpx/_utils.py   score 5.47
+## httpx/_utils.py   score 6.18
 seed: name match: httpx/_utils.py; learned: 'environment' → this file
   def get_environment_proxies() -> dict[str, str | None]
       # Gets proxy information from the environment
   def is_ipv6_hostname(hostname: str) -> bool
 
-## httpx/_client.py   score 3.52
+## httpx/_client.py   score 3.66
 seed: learned: 'variable' → this file
   def _get_proxy_map( self, proxy: ProxyTypes | None, allow_env_proxies: bool ) …
 
-1,200 / 1,200 tokens · 571 ms`
+1,196 / 1,200 tokens · 244 ms`
 
-const INSTALL = `git clone <this repo> && cd desirepath
+const INSTALL = `git clone <this repo> && cd klew
 docker compose up -d            # local HydraDB node
 uv pip install -e .             # or: pip install -e .
-desirepath index ~/code/your-repo
-cd ~/code/your-repo && claude mcp add desirepath -- desirepath mcp`
+klew index ~/code/your-repo
+cd ~/code/your-repo && claude mcp add klew -- klew mcp`
 
 function Stat({ value, label, note }: { value: string; label: string; note: string }) {
   return (
@@ -66,7 +66,7 @@ function Savings({ tokensSavedPerTask }: { tokensSavedPerTask: number }) {
 export default function Landing() {
   const { results } = useEvalResults()
   const r = results?.find((x) => x.repo === 'httpx') ?? results?.[0]
-  const s = r?.summary
+  const s = r?.summary_held_out ?? r?.summary
   const stats = useMemo(() => {
     if (!s?.graph_learn || !s.vector) return null
     const g = s.graph_learn, v = s.vector, st = s.graph_static
@@ -76,7 +76,8 @@ export default function Landing() {
       tokenRatio: v.tokens_per_hit && g.tokens_per_hit ? (v.tokens_per_hit / g.tokens_per_hit).toFixed(1) : '–',
       learnLift: st ? `+${Math.round((g.budget_recall - st.budget_recall) * 100)} pts` : '–',
       savedPerTask: Math.max(0, v.tokens_mean - g.tokens_mean),
-      commits: r?.scored ?? 0,
+      commits: r?.summary_held_out ? (r?.held_out_commits ?? 0) : (r?.scored ?? 0),
+      heldOut: !!r?.summary_held_out,
     }
   }, [s, r])
 
@@ -86,10 +87,10 @@ export default function Landing() {
         <div className="grid gap-5">
           <span className="eyebrow">Context layer for coding agents · built on HydraDB</span>
           <h1 className="text-5xl leading-[1.05] font-bold sm:text-6xl">
-            Your agents wear a path through your code. <span className="text-trail">Desirepath remembers it.</span>
+            Your codebase is a labyrinth. <span className="text-trail">Klew is the thread.</span>
           </h1>
           <p className="max-w-xl text-lg text-muted">
-            Every session, a coding agent rediscovers your repo by grepping and pasting whole files. Desirepath hands it a
+            Every session, a coding agent rediscovers your repo by grepping and pasting whole files. Klew hands it a
             small map instead: the functions, callers, tests and files that matter for this task, each with the path that
             connects it. Every merged PR teaches it which paths were right.
           </p>
@@ -109,7 +110,7 @@ export default function Landing() {
         <section className="mx-auto grid max-w-6xl gap-8 px-4 py-10 sm:px-6">
           <div className="grid gap-8 sm:grid-cols-3">
             <Stat value={stats.inContext} label="right file in a 2k-token context"
-                  note={`vs ${stats.vsVector} for vector RAG, over ${stats.commits} real ${r.repo} commits`} />
+                  note={`vs ${stats.vsVector} for vector RAG, over ${stats.commits} ${stats.heldOut ? 'held-out' : 'real'} ${r.repo} commits`} />
             <Stat value={`${stats.tokenRatio}×`} label="fewer tokens per correct file"
                   note="signatures and the right snippet, not 40-line chunks" />
             <Stat value={stats.learnLift} label="from learning alone"
@@ -130,7 +131,7 @@ export default function Landing() {
         <div className="grid gap-6 md:grid-cols-3">
           {[
             ['Map', 'Tree-sitter parses the repo into files, symbols, calls, imports, inheritance and tests. Git history adds which files change together. All of it lives in HydraDB on object storage.'],
-            ['Walk', 'For a task, Desirepath seeds from names in the task, then walks calls, callers, tests and co-changes in HydraDB, hop by hop. It packs signatures and the best snippet into your token budget, with the path that justifies each file.'],
+            ['Walk', 'For a task, Klew seeds from names in the task, then walks calls, callers, tests and co-changes in HydraDB, hop by hop. It packs signatures and the best snippet into your token budget, with the path that justifies each file.'],
             ['Learn', 'When a run or PR lands, the files that actually changed reinforce the links from the task’s words to those files, and files it served that didn’t matter decay. Structure stays fact; experience is learned on top.'],
           ].map(([t, d]) => (
             <div key={t} className="grid content-start gap-2">

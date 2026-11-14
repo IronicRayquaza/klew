@@ -1,0 +1,16 @@
+# Copy into a repository that uses Klew: every merged PR teaches the shared graph.
+name: klew-learn
+on:
+  pull_request:
+    types: [closed]
+jobs:
+  learn:
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - uses: klew/learn@v0   # this repo's action/ directory
+        with:
+          hydra-uri: ${{ secrets.HYDRA_URI }}
+          hydra-token: ${{ secrets.HYDRA_TOKEN }}

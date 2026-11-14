@@ -1,9 +1,9 @@
-# Local HydraDB node for Desirepath development.
+# Local HydraDB node for Klew development.
 # Plaintext + dev token: local use only.
 services:
   hydradb:
     image: ghcr.io/hydra-db/hydradb:latest
-    container_name: desirepath-hydradb
+    container_name: klew-hydradb
     environment:
       CLOUD_PROVIDER: local
       LOCAL_PATH: /tmp/graph

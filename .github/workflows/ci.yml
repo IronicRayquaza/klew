@@ -11,11 +11,11 @@ jobs:
           chmod 644 .hydradb/auth-token && docker compose up -d
       - uses: astral-sh/setup-uv@v5
       - run: uv venv --python 3.12 && uv pip install -e ".[dev]"
-      - run: .venv/bin/ruff check desirepath tests
+      - run: .venv/bin/ruff check klew tests
       - run: .venv/bin/python -m pytest -q
       - name: wait for HydraDB
         run: for i in $(seq 1 60); do curl -sf -o /dev/null http://127.0.0.1:9090/readyz && exit 0; sleep 1; done; exit 1
-      - run: DP_TEST_HYDRA=1 .venv/bin/python -m pytest -q
+      - run: KLEW_TEST_HYDRA=1 .venv/bin/python -m pytest -q
   web:
     runs-on: ubuntu-latest
     defaults: { run: { working-directory: web } }

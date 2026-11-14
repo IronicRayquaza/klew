@@ -74,7 +74,7 @@ export default function Dashboard() {
         {live === false && (
           <p className="rounded-lg border border-line bg-card px-4 py-3 text-sm text-muted">
             You're viewing a recorded run. To try your own tasks, start the API with
-            <code className="mx-1 rounded bg-code px-1.5 font-mono text-ink">desirepath serve</code> and reload.
+            <code className="mx-1 rounded bg-code px-1.5 font-mono text-ink">klew serve</code> and reload.
           </p>
         )}
       </header>
@@ -166,7 +166,7 @@ export default function Dashboard() {
 
             <div className="grid gap-3 rounded-xl border border-line bg-card p-4">
               <h3 className="font-bold">Teach it</h3>
-              <p className="text-sm text-muted">Tick the files you actually changed, and add any it missed. Desirepath strengthens the paths that led there and weakens the ones that didn't.</p>
+              <p className="text-sm text-muted">Tick the files you actually changed, and add any it missed. Klew strengthens the paths that led there and weakens the ones that didn't.</p>
               <input id="extra" value={extra} onChange={(e) => setExtra(e.target.value)} disabled={!live}
                      placeholder="other changed files, e.g. httpx/_utils.py"
                      className="rounded-lg border border-line bg-paper px-3 py-2 font-mono text-sm" />

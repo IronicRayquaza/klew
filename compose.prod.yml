@@ -1,0 +1,45 @@
+# Hosted demo: `docker compose -f compose.prod.yml up -d --build`, then open http://<host>:8000
+# HydraDB is reachable only on the internal network. Set HYDRA_TOKEN to your own 32+ char secret.
+services:
+  hydradb:
+    image: ghcr.io/hydra-db/hydradb:latest
+    restart: unless-stopped
+    environment:
+      CLOUD_PROVIDER: local
+      LOCAL_PATH: /tmp/graph
+      GRAPH_NAMESPACE: default
+      GRAPH_ID: default
+      GRAPH_CELL_ID: cell-0
+      GRAPH_CELLS: cell-0
+      GRAPH_NODE_ID: node-0
+      GRAPH_BOLT_ADDR: 0.0.0.0:7687
+      GRAPH_HTTP_ADDR: 0.0.0.0:8443
+      GRAPH_ADMIN_ADDR: 0.0.0.0:9090
+      GRAPH_BOLT_NODE_ADDRESSES: node-0=hydradb:7687
+      GRAPH_ADVERTISED_BOLT_ADDR: hydradb:7687
+      GRAPH_DATA_CACHE_DIR: /var/cache/slatedb
+      GRAPH_AUTH_TOKEN_FILE: /run/secrets/hydra_token
+      GRAPH_ALLOW_PLAINTEXT: "true"      # internal network only; never published
+      GRAPH_USAGE_REPORT_ENABLED: "false"
+      GRAPH_CYPHER_ENGINE: legacy
+      RUST_MIN_STACK: "33554432"
+    volumes:
+      - graph:/tmp/graph
+    secrets: [hydra_token]
+  app:
+    build: .
+    restart: unless-stopped
+    depends_on: [hydradb]
+    environment:
+      HYDRA_URI: bolt://hydradb:7687
+      HYDRA_TOKEN_FILE: /run/secrets/hydra_token
+      HYDRA_ADMIN_URL: http://hydradb:9090
+      KLEW_RATE_PER_MIN: "30"
+    secrets: [hydra_token]
+    ports:
+      - "8000:8000"
+volumes:
+  graph:
+secrets:
+  hydra_token:
+    file: ./deploy/hydra_token

@@ -1,12 +1,19 @@
 """Pure domain tests: no HydraDB, no disk."""
-from desirepath import ids
-from desirepath.adapters.memory_store import MemoryGraphStore
-from desirepath.domain import learning
-from desirepath.domain.packer import RankedFile, pack, promote_companions, rank_files, why_path
-from desirepath.domain.seeder import Lexicon, Seed, lexical_seeds, merge_seeds
-from desirepath.domain.walker import walk
-from desirepath.schema import CALLS, CONTAINS, FILE, SYMBOL
-from desirepath.text import identifiers, tokenize
+from klew import ids
+from klew.adapters.memory_store import MemoryGraphStore
+from klew.domain import learning
+from klew.domain.packer import (
+    RankedFile,
+    fuse_ranks,
+    pack,
+    promote_companions,
+    rank_files,
+    why_path,
+)
+from klew.domain.seeder import Lexicon, Seed, lexical_seeds, merge_seeds
+from klew.domain.walker import walk
+from klew.schema import CALLS, CONTAINS, FILE, SYMBOL
+from klew.text import identifiers, tokenize
 
 
 def test_tokenize_splits_identifiers_and_drops_stopwords():
@@ -113,3 +120,30 @@ def test_companions_are_promoted_with_a_why_step():
     path = why_path(res, comp, lambda n: keys.get(n, str(n)), by_id)
     assert path[-1].node == "tests/test_a.py" and path[-1].via == "tested in"
     assert isinstance(out[0], RankedFile)
+
+
+def test_protected_head_is_not_reordered_by_companions():
+    a = RankedFile(1, 10.0, [], 1)
+    b = RankedFile(2, 5.0, [], 2)
+    c = RankedFile(3, 1.0, [], 3)
+    out = promote_companions([a, b, c], {1: [(9, "tested in")]}, top_k=1, weight=0.9, protect=2)
+    assert [r.file_id for r in out[:2]] == [1, 2]
+    assert next(r for r in out if r.file_id == 9).score < 5.0
+
+
+def test_relevance_cutoff_stops_packing_weak_tail():
+    ranked = [RankedFile(i, s, [], i) for i, s in enumerate([10.0, 9.0, 8.0, 0.5, 0.4], start=1)]
+    items = pack(ranked, 10_000, path_of=lambda f: f"f{f}.py", sym_rows={}, snippet_of=None,
+                 why_of=lambda r: [], seed_reason={}, max_items=30, min_relative=0.1, min_items=2)
+    assert [i.path for i in items] == ["f1.py", "f2.py", "f3.py"]
+
+
+def test_rank_fusion_promotes_files_both_rankers_agree_on():
+    graph = [RankedFile(1, 9.0, [], 1), RankedFile(2, 8.0, [], 2), RankedFile(3, 7.0, [], 3)]
+    out = fuse_ranks(graph, external=[3, 2, 4], k=10, weight=1.0)
+    assert {r.file_id for r in out[:2]} == {2, 3}          # in both lists beats graph-only #1
+    assert out[2].file_id == 1
+    added = next(r for r in out if r.file_id == 4)
+    assert added.via == (4, "text match")
+    assert why_path(None, added, lambda n: f"f{n}.py")[0].via == "text match"
+    assert next(r for r in out if r.file_id == 1).score == 9.0   # displayed score unchanged

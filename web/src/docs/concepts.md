@@ -1,19 +1,19 @@
 # How it works
 
-Desirepath does three things: **map** the repository, **walk** it for each task, and **learn** from what
+Klew does three things: **map** the repository, **walk** it for each task, and **learn** from what
 actually changed.
 
 ## Map
 
-`desirepath index` parses every Python file with tree-sitter and writes a typed graph to HydraDB:
+`klew index` parses every Python file with tree-sitter and writes a typed graph to HydraDB:
 
 | Node | What it is |
 |---|---|
-| `DpFile` | a source file: path, size in tokens, whether it's a test |
-| `DpSymbol` | a class, function, method or test: qualified name, signature, first docstring line, line span, distinctive body words |
-| `DpTerm` | a word from a task, created when the graph learns |
-| `DpRun` | one context request: the task, what was served, what was touched |
-| `DpRepo` | an indexed repository |
+| `KlewFile` | a source file: path, size in tokens, whether it's a test |
+| `KlewSymbol` | a class, function, method or test: qualified name, signature, first docstring line, line span, distinctive body words |
+| `KlewTerm` | a word from a task, created when the graph learns |
+| `KlewRun` | one context request: the task, what was served, what was touched |
+| `KlewRepo` | an indexed repository |
 
 | Edge | From → to | Kind |
 |---|---|---|
@@ -29,7 +29,7 @@ re-indexing never erases what the graph has learned.
 
 ## Walk
 
-For a task, Desirepath:
+For a task, Klew:
 
 1. **Seeds** from the task text: BM25 over symbol names, docstrings and distinctive body words, exact
    identifiers (`Client.send`, `ReadTimeout`), and learned `POINTS_TO` links from the task's words.
@@ -42,7 +42,11 @@ For a task, Desirepath:
 4. **Adds companions**: for the top three files, it pulls in their test file (matched by name) and their
    strongest co-change partner at 0.4× the parent's score. A change to one file usually touches those too,
    and each companion's why-path says so (`tested in`, `changes with`).
-5. **Packs** the budget greedily, up to 30 files: for each file, its header, its most relevant signatures,
+5. **Fuses** the ranking with a plain text ranker (reciprocal rank fusion, k = 20): BM25 over full file
+   text by default, or vector search when it's configured. The graph's own #1 is kept, and the rest is
+   reordered so files that both rankers like rise. The graph finds structure; text catches wording the
+   graph can't see.
+6. **Packs** the budget greedily, up to 30 files: for each file, its header, its most relevant signatures,
    and (for the top files) the best snippet. Long signatures are trimmed. If nothing matches the task, it
    **abstains** rather than guess.
 
@@ -59,7 +63,7 @@ When an outcome arrives (`record_outcome`, `learn-git`, or the GitHub Action):
 Sweeping changes that touch more than 12 files are skipped as too noisy to learn from. Weights stay
 between 0 and 1, so no single run can dominate.
 
-**Warm start.** `desirepath index` replays the repository's last 300 commits through this same rule, using
+**Warm start.** `klew index` replays the repository's last 300 commits through this same rule, using
 each commit message as the task and the files it modified as the outcome. A fresh install starts with a
 graph that has already learned how your team's words map to your code.
 
@@ -71,5 +75,5 @@ graph that has already learned how your team's words map to your code.
 - **It explains itself.** A path through the code can be audited; a cosine score can't.
 - **It spends fewer tokens.** Signatures and one good snippet instead of whole 40-line chunks.
 
-Vector search is good at fuzzy matching, so Desirepath can use it as one more seed source (the
-"Desirepath + vector seeds" approach in [Evaluation](#docs/evaluation)). The graph then does the rest.
+Vector search is good at fuzzy matching, so Klew can use it as one more seed source (the
+"Klew + vector seeds" approach in [Evaluation](#docs/evaluation)). The graph then does the rest.

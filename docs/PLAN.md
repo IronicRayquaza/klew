@@ -1,4 +1,4 @@
-# Desirepath: Architecture & Build Plan (HydraDB Hackathon, Nov 14–16, 2026)
+# Klew: Architecture & Build Plan (HydraDB Hackathon, Nov 14–16, 2026)
 
 ## 0. Context
 
@@ -8,7 +8,7 @@
 - **Lessons from Hack Hydra (Aug 2026):** no winners have been published. The rubric ran: technical execution > graph-native HydraDB use > product completeness > quality of results > originality. The strongest entries (Seismic, Hindsight, HydraClaim) all had a narrow wedge, a typed graph, bounded native traversal, an MCP surface, why-paths and abstention, a reproducible baseline comparison, and honest limitations. None of them combined self-improvement with context serving, so that's our gap.
 - **Team:** 2 people (A = graph/backend/eval, B = product/frontend/GTM). Stack: Python + React.
 
-**Product in one line:** Desirepath is an MCP context server for coding agents. It hands the agent a token-budgeted map of the code that matters, found by traversing a code graph in HydraDB, and it learns from every run and merged PR which paths actually led to the files that changed.
+**Product in one line:** Klew is an MCP context server for coding agents. It hands the agent a token-budgeted map of the code that matters, found by traversing a code graph in HydraDB, and it learns from every run and merged PR which paths actually led to the files that changed.
 
 ---
 
@@ -18,7 +18,7 @@
   Developer ──uses──► Coding agent (Claude Code / Cursor)
                           │  MCP (stdio)
                           ▼
-  GitHub ──PR merged──► ┌───────────────── Desirepath ─────────────────┐ ◄── Judge / visitor
+  GitHub ──PR merged──► ┌───────────────── Klew ─────────────────┐ ◄── Judge / visitor
   (Action)              │  Python pkg (MCP · API · CLI)  +  React web  │     (landing, dashboard)
                         └───────────────────────┬──────────────────────┘
                                                 │ Bolt :7687
@@ -31,11 +31,11 @@
 | Container | Tech | Responsibility | Ports |
 |---|---|---|---|
 | `hydradb` | Upstream Dockerfile; local FS / MinIO object store | Source of truth for the code graph, learned weights, and runs | 7687, 8443, 9090 |
-| `desirepath mcp` | Python, FastMCP, stdio | Agent-facing tools. Talks to HydraDB **directly**, with no API hop | stdio |
-| `desirepath serve` | FastAPI + SSE | Dashboard API and live run events | 8000 |
-| `desirepath` CLI | Typer | `init`, `index`, `learn`, `eval`, `consolidate` | — |
+| `klew mcp` | Python, FastMCP, stdio | Agent-facing tools. Talks to HydraDB **directly**, with no API hop | stdio |
+| `klew serve` | FastAPI + SSE | Dashboard API and live run events | 8000 |
+| `klew` CLI | Typer | `init`, `index`, `learn`, `eval`, `consolidate` | — |
 | `web` | Vite + React + Tailwind + react-force-graph + Recharts | `/` landing page, `/app` dashboard. **Snapshot mode** loads precomputed JSON, so it can deploy to Vercel with no backend | 5173 |
-| GitHub Action | Composite action that runs `uvx desirepath learn --pr` | Learns from each merged PR | — |
+| GitHub Action | Composite action that runs `uvx klew learn --pr` | Learns from each merged PR | — |
 
 The three Python entrypoints share one `core` package.
 
@@ -56,17 +56,17 @@ All Cypher lives in **one file**, `adapters/queries.py`. If the dialect rejects 
 
 ## 4. Data model (HydraDB)
 
-**IDs:** `id` is an int64 from `blake2b(repo|kind|qualname)`, so it's deterministic and every write can be a `MERGE`. `key` holds the human-readable string. Every node carries `repo`. Labels are namespaced `Dp*`.
+**IDs:** `id` is an int64 from `blake2b(repo|kind|qualname)`, so it's deterministic and every write can be a `MERGE`. `key` holds the human-readable string. Every node carries `repo`. Labels are namespaced `Klew*`.
 
 | Node | Key properties |
 |---|---|
-| `DpRepo` | `id, name, head_sha` |
-| `DpFile` | `id, repo, path, lang, tokens, sha` |
-| `DpSymbol` | `id, repo, qualname, kind(func/class/method), sig, start, end, file_id, tokens` |
-| `DpTest` | same shape as `DpSymbol`, for test functions |
+| `KlewRepo` | `id, name, head_sha` |
+| `KlewFile` | `id, repo, path, lang, tokens, sha` |
+| `KlewSymbol` | `id, repo, qualname, kind(func/class/method), sig, start, end, file_id, tokens` |
+| `DpTest` | same shape as `KlewSymbol`, for test functions |
 | `DpConfig` | `id, repo, path, keys` |
-| `DpTerm` | `id, text` (normalized task vocabulary: snake/camel split, stemmed, stop-worded) |
-| `DpRun` | `id, repo, task, ts, source(agent/pr/replay), served_json, outcome, tokens_served` |
+| `KlewTerm` | `id, text` (normalized task vocabulary: snake/camel split, stemmed, stop-worded) |
+| `KlewRun` | `id, repo, task, ts, source(agent/pr/replay), served_json, outcome, tokens_served` |
 
 | Edge | From → To | Properties | Kind |
 |---|---|---|---|
@@ -87,38 +87,38 @@ All Cypher lives in **one file**, `adapters/queries.py`. If the dialect rejects 
 
 ```cypher
 -- upsert
-UNWIND $rows AS row MERGE (n:DpSymbol {id: row.id}) SET n.qualname=row.q, n.sig=row.sig, n.start=row.s, n.end=row.e, n.repo=row.repo
-UNWIND $rows AS row MATCH (a:DpSymbol {id: row.src}) MATCH (b:DpSymbol {id: row.dst}) MERGE (a)-[r:CALLS]->(b) SET r.w=row.w
+UNWIND $rows AS row MERGE (n:KlewSymbol {id: row.id}) SET n.qualname=row.q, n.sig=row.sig, n.start=row.s, n.end=row.e, n.repo=row.repo
+UNWIND $rows AS row MATCH (a:KlewSymbol {id: row.src}) MATCH (b:KlewSymbol {id: row.dst}) MERGE (a)-[r:CALLS]->(b) SET r.w=row.w
 -- frontier expansion (one query per edge type, run concurrently)
 UNWIND $ids AS i MATCH (a {id: i})-[r:CALLS]->(b) RETURN a.id AS src, b.id AS dst, r.w AS w
 -- learned weight write-back
-UNWIND $rows AS row MATCH (a:DpTerm {id: row.src})-[r:POINTS_TO]->(b {id: row.dst}) SET r.w=row.w, r.hits=row.h, r.misses=row.m
+UNWIND $rows AS row MATCH (a:KlewTerm {id: row.src})-[r:POINTS_TO]->(b {id: row.dst}) SET r.w=row.w, r.hits=row.h, r.misses=row.m
 ```
 
 The `Walker` has two implementations behind one interface: `AlgoPathsWalker` (native `algo.MSpaths`, used once we've confirmed its output shape at H0) and `FrontierWalker` (iterative 1-hop `UNWIND`, the safe fallback).
 
 ## 5. Core flows
 
-**5.1 Index** (`desirepath init` / `index`)
+**5.1 Index** (`klew init` / `index`)
 1. `SourceReader` walks the `.py` files with tree-sitter and extracts symbols, imports, calls, and tests.
 2. It resolves names through each file's imports and the same module.
 3. `GraphStore.upsert` writes nodes first, then edges.
 4. `miner` reads the last N commits, counts co-changes, and writes `CO_CHANGED.w = count / max`.
-5. It builds the in-memory **lexicon** (BM25 over symbol names, paths, and docstrings, plus the `DpTerm` table), because HydraDB has no full-text search.
+5. It builds the in-memory **lexicon** (BM25 over symbol names, paths, and docstrings, plus the `KlewTerm` table), because HydraDB has no full-text search.
 
 **5.2 get_context** (hot path, target p95 < 300 ms on about 5k symbols)
 ```
-task ─► Seeder: terms + identifiers → seeds {node: s0}  (lexicon match ∪ learned POINTS_TO from DpTerm)
+task ─► Seeder: terms + identifiers → seeds {node: s0}  (lexicon match ∪ learned POINTS_TO from KlewTerm)
      ─► Walker: ≤3 hops, fan-out cap 50/node, ≤2000 edges, over CALLS/IMPORTS/TESTS/CO_CHANGED/SHORTCUT
      ─► Ranker: score(n) = Σ_paths s0 · Π w(e) · γ^len  (γ=0.6, drop paths < ε); best path kept as why_path
      ─► Packer: greedy by score/tokens → signature first, then snippet span read from disk; stop at budget
      ─► ContextPack {run_id, items[], tokens, timings, abstained}   (abstain if max seed score < τ)
-     ─► async: write DpRun + SERVED (queue, never blocks the response)
+     ─► async: write KlewRun + SERVED (queue, never blocks the response)
 ```
 
 **5.3 record_outcome** (after an agent run, from a git hook, or the agent calling it)
 1. Work out the touched files: use the `touched_files` passed in, or else compute them from `git diff`.
-2. `LearningRule` loads the served paths from `DpRun.served_json` and computes deltas:
+2. `LearningRule` loads the served paths from `KlewRun.served_json` and computes deltas:
    - Served items whose why-path ended in a touched file: `w(e) += α·(1 − w/w_max)` along that path, and `POINTS_TO(term→file) += α` for each task term. Missing edges are created at w0 = 0.5.
    - Served items that weren't touched: `w(e) −= β·w` with a floor of 0.05. Structural edges are never deleted.
    - Touched files that were *never served*: create `POINTS_TO(term→file)` at w0. This is what fixes misses.
@@ -132,7 +132,7 @@ task ─► Seeder: terms + identifiers → seeds {node: s0}  (lexicon match ∪
 - Prune learned edges where `misses > m · hits`.
 - Report the counts of added and pruned edges. That's the visible proof that "the graph improves itself."
 
-**5.6 Eval replay** (`desirepath eval`)
+**5.6 Eval replay** (`klew eval`)
 1. For each commit in chronological order: predict, score against the changed files, then learn.
 2. Arms: vector RAG (fastembed bge-small + numpy), BM25, static graph, learning graph, and an optional vector-seed + learning graph arm.
 3. Output `eval/results/{repo}.json` with the commit hash, plus plots.
@@ -158,11 +158,11 @@ All interfaces share Pydantic models (`ContextPack`, `ContextItem{id, file, symb
 - Repos and results: `GET /api/repos`, `GET /api/stats`, `GET /api/eval/results`
 - Live events: `GET /api/events` (SSE)
 
-**Config:** `.desirepath.toml` in the repo, plus env vars `HYDRA_URI`, `HYDRA_TOKEN`, `HYDRA_GRAPH=default`, `HYDRA_CELL=cell-0`, and `RUST_MIN_STACK` for the node.
+**Config:** `.klew.toml` in the repo, plus env vars `HYDRA_URI`, `HYDRA_TOKEN`, `HYDRA_GRAPH=default`, `HYDRA_CELL=cell-0`, and `RUST_MIN_STACK` for the node.
 
 ## 7. Deployment
 
-- **Local / judges:** `docker compose up` starts `hydradb` (built from the upstream Dockerfile, with a volume `./data/store`) and `api`. MCP runs on the host via `uvx desirepath mcp`. `scripts/demo-seed.sh` loads a committed demo dataset, so judges don't have to clone anything.
+- **Local / judges:** `docker compose up` starts `hydradb` (built from the upstream Dockerfile, with a volume `./data/store`) and `api`. MCP runs on the host via `uvx klew mcp`. `scripts/demo-seed.sh` loads a committed demo dataset, so judges don't have to clone anything.
 - **Public demo:** `web` on Vercel in snapshot mode, backed by precomputed eval and recorded runs. A live backend on a small VM is a stretch goal.
 - **CI:** GitHub Actions runs ruff + mypy + pytest. One job builds or pulls the HydraDB image and runs the integration and contract tests.
 
@@ -170,7 +170,7 @@ All interfaces share Pydantic models (`ContextPack`, `ContextItem{id, file, symb
 
 - **Idempotency:** deterministic IDs + `MERGE`, so re-running index or learn is safe.
 - **Performance:** batches of 1000, edge-type queries run concurrently, a cap on walk size, the lexicon kept in memory, and timings (seed/walk/rank/pack) returned in every pack and shown on the dashboard.
-- **Observability:** structlog JSON logs, HydraDB `/metrics`, and the `DpRun` history doubles as the audit log.
+- **Observability:** structlog JSON logs, HydraDB `/metrics`, and the `KlewRun` history doubles as the audit log.
 - **Security and privacy:** code never leaves the machine; the MCP surface is read-only except the learning tools; plaintext HydraDB is used only for local development.
 - **Testing pyramid:** domain unit tests (ranking math, packing, learning rule, seeding) → InMemory-vs-Hydra contract test → live integration test → golden eval fixture (5 commits with known expected files).
 
@@ -195,7 +195,7 @@ All interfaces share Pydantic models (`ContextPack`, `ContextItem{id, file, symb
 ## 11. Repo layout
 
 ```
-desirepath/
+klew/
   core/domain/{seeder,walker,ranker,packer,learning,consolidator}.py
   core/services/{context,learning,index,eval}.py
   core/ports.py  core/models.py
@@ -235,13 +235,13 @@ README.md  ARCHITECTURE.md  JUDGES.md  LICENSE (MIT; attribute HydraDB ELv2)
 
 - `pytest`: domain unit tests, the contract test, and a live HydraDB integration test. The integration test checks that a 2-hop neighbor comes back with its why-path, and that `w` increases after `record_outcome`.
 - `make eval` reproduces `eval/results/*.json` and the plots from a clean checkout.
-- `claude mcp add desirepath -- uvx desirepath mcp`, then a real task: confirm `get_context` is called and `record_outcome` updates the weights shown on the dashboard.
+- `claude mcp add klew -- uvx klew mcp`, then a real task: confirm `get_context` is called and `record_outcome` updates the weights shown on the dashboard.
 - Fresh-clone quickstart on the second machine before submitting.
 
 ## 15. Working rules (from the user)
 
 - **No `git commit` and no `git push` until the user says so.** Local edits only.
-- **A live handoff artifact**, "Desirepath Build Status". It's a private claude.ai page published from the scratchpad, **never added to the repo**. It's written so the teammate's AI agent can study it and get up to speed on the codebase. Contents:
+- **A live handoff artifact**, "Klew Build Status". It's a private claude.ai page published from the scratchpad, **never added to the repo**. It's written so the teammate's AI agent can study it and get up to speed on the codebase. Contents:
   - "Agent: start here": what to read and in what order
   - The architecture summary and diagram
   - A module map with status per file (done / in progress / todo)

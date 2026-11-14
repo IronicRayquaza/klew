@@ -1,6 +1,9 @@
-# Desirepath
+# Klew
 
-Desirepath is a **context layer for coding agents**. It maps your repository as a graph in
+> A *clew* is the ball of thread Ariadne gave Theseus to find his way through the labyrinth. It's where
+> the word *clue* comes from.
+
+Klew is a **context layer for coding agents**. It maps your repository as a graph in
 [HydraDB](https://github.com/hydra-db/hydradb). When an agent starts a task, it hands over a small,
 token-budgeted map of the code that matters, with the path through the code that justifies every file.
 Each merged PR then teaches the graph which paths were right.
@@ -11,9 +14,9 @@ Every session, a coding agent rediscovers your repository from scratch. It greps
 pastes 40-line chunks that look like the task. That costs tokens, and it still misses the file that
 matters when that file doesn't *look* like the task: the caller, the test, the config two hops away.
 
-## What Desirepath does instead
+## What Klew does instead
 
-| | Vector RAG | Desirepath |
+| | Vector RAG | Klew |
 |---|---|---|
 | Finds code by | text similarity to the task | names in the task, then following calls, callers, tests, imports and co-changes |
 | Gives the agent | top-k chunks | signatures plus the best snippet per file, inside your token budget |
@@ -24,7 +27,7 @@ matters when that file doesn't *look* like the task: the caller, the test, the c
 
 We replay about 300 real commits from each of [httpx](https://github.com/encode/httpx) and
 [flask](https://github.com/pallets/flask), in order. Every approach gets the same 2,000-token budget.
-Desirepath gets the changed file into the agent's context far more often than vector RAG, and spends about
+Klew gets the changed file into the agent's context far more often than vector RAG, and spends about
 half the tokens per correct file. The live numbers and charts are on the [Results](#results) page, and the
 method is in [Evaluation](#docs/evaluation).
 
