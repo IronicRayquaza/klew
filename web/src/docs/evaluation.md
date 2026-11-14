@@ -36,16 +36,37 @@ order:
 
 ## Held-out commits
 
+In plain words: Klew has a few knobs, such as how strongly to blend in text search. We set them using only
+the earliest commits of httpx, locked them, and report results on the later commits, which we never looked
+at while setting the knobs. It is like grading a student on questions that weren't in their practice set.
+For httpx that means settings locked after September 2021 and measured on 199 commits from October 2021 to
+February 2026. flask was never used for tuning at all.
+
+Tuning is not the same as learning. Klew's graph keeps learning from every commit, but only after it has
+answered it, the same way it would learn from a merged pull request. It never sees an answer before answering.
+
 Parameters were tuned on the first 100 commits of the httpx window (`scripts/tune.py`). Every result file
 also reports `summary_held_out`, computed on the remaining commits only, and the [Results](#results) page
 shows those by default. Runs are deterministic: the same inputs give the same numbers.
 
 ## Accuracy as the graph learns
 
-`scripts/learning_curve.py` lets the graph learn from N past commits (0 to 600), then freezes learning
-and measures the held-out commits. N = 0 is the same system with no learning. On httpx, right file in
-context rises from 82.1% to 89.1%, recall@5 from 57.1% to 62.0% and MRR from 55.5% to 58.1%. On flask,
-recall@5 rises from 52.4% to 55.3% and MRR from 48.5% to 51.8%. The chart is on the Results page.
+`scripts/learning_curve.py` lets the graph learn from N past commits, then freezes learning and measures
+the held-out commits. N = 0 is the same system with no learning. On httpx (0 to 600 commits learned),
+top-1 rises from 45.2% to 50.2%, MRR from 57.0% to 63.0%, recall@5 from 55.7% to 64.3% and right
+file in context from 82.0% to 89.1%. On flask, recall@5 rises from 48.5% to 58.3% and MRR from
+49.4% to 55.0%. On ODS, never used for tuning (0 to 300 commits learned), top-1 rises from 35.5% to 40.4%
+and MRR from 48.3% to 52.0%. The charts are on the Results page.
+
+## A third, unseen repository: ODS
+
+To check that the settings transfer, we ran the same evaluation on
+[Osmantic/ODS](https://github.com/Osmantic/ODS): 1,381 Python files, 25,944 symbols and about 82,000 graph
+edges, roughly 20 times larger than httpx. No ODS commit was used for tuning. On 166 commits, Klew + vector
+seeds put the right file in context 71.9% of the time vs 35.0% for vector RAG, with top-1
+45.8% vs 39.2% and MRR 57.2% vs 51.3%. The ranking margins are smaller than on httpx, and two
+costs grow with size: latency is about 0.9 s per request, and on this repo the graph walk spends budget less
+efficiently (without the walk, the right file is in context 76.9% of the time at half the tokens).
 
 ## Results
 
@@ -57,12 +78,11 @@ The live tables and learning curves are on the [Results](#results) page. They're
 - Commit messages are terser than real agent prompts.
 - We score Python files only, and static call resolution is best-effort.
 - Parameters were tuned on the first 100 commits of httpx only. The held-out numbers exclude them.
-- Held-out ranking: with vector seeds, Klew beats vector RAG on recall@5 on both repositories, and on
-  top-1 and MRR on flask. On httpx it trails on top-1 (43.7% vs 47.2%) and MRR (60.7% vs 62.2%).
-  Klew's clear win is what fits in the budget: the right file in context 89–95% vs 45–58%.
-- The ablation shows the graph walk adds coverage (+2 to +5 points of right file in context) but currently
-  costs precision at the top: without the walk, top-1 on httpx is 49.2% vs 40.7%. Using direct evidence
-  for the head of the ranking and the walk to fill the rest is the next step.
+- Held-out, Klew beats vector RAG on every quality metric on all three repositories, with or without vector
+  seeds. The margin is largest on what fits in the budget: the right file in context 72–95% vs 35–58%.
+- The ablation shaped the design. The graph walk adds coverage (more right files in context) but, used
+  alone to order the list, it cost precision at the top. Klew now ranks in two stages: direct evidence
+  (task words, learned links, text) picks the top five files, and the walk fills the rest of the budget.
 - Latency is higher: about 0.2–0.4 s per request versus about 15 ms for a vector lookup.
 
 ## Reproduce

@@ -22,47 +22,65 @@ often the #1 file changed. *MRR*: 1 if the first correct file is #1, ½ at #2, �
 Every number below is on **held-out commits**: the first 100 commits of each window were used for
 tuning (`scripts/tune.py`), and these are the rest. Every approach gets the same 2,000-token budget.
 
-### httpx: 199 held-out commits
+### httpx: 199 held-out commits (first 100 commits used for tuning)
 
 | Approach | Right file in context | Tokens per correct file | Recall@5 | Top-1 | MRR |
 |---|---|---|---|---|---|
 | Vector RAG | 58.1% | 3,392 | 63.9% | 47.2% | 62.2% |
 | BM25 RAG | 49.1% | 3,685 | 56.2% | 39.2% | 52.3% |
-| Klew, learning off | 83.4% | 1,636 | 58.4% | 40.2% | 55.2% |
+| Klew, learning off | 83.4% | 1,624 | 56.0% | 44.7% | 56.9% |
 | Klew without graph traversal | 87.6% | 675 | 65.5% | 49.2% | 62.8% |
-| **Klew** | 89.5% | 2,032 | 60.8% | 40.7% | 56.5% |
-| **Klew + vector seeds** | 95.2% | 2,001 | 67.6% | 43.7% | 60.7% |
+| **Klew** | 88.9% | 2,025 | 65.4% | 50.7% | 63.6% |
+| **Klew + vector seeds** | 95.3% | 1,986 | 67.3% | 56.8% | 68.8% |
 
-- **Learning** (same graph, learning off vs on): +6.2 pts right file in context.
-- **Graph traversal** (Klew with vs without the walk): +1.9 pts right file in context, -8.6 pts top-1.
-- **Where vector RAG ranks higher** (top-1 47.2% vs 43.7%, MRR 62.2% vs 60.7%), it is about order, not speed or coverage: on the 30 commits where vector RAG was right at #1 and Klew + vector seeds was not, the right file was still in Klew's pack 30 times, typically at #2. The agent got none of the changed files from vector RAG on 47 of 199 commits, and from Klew + vector seeds on 2.
+- **Learning** (same graph, learning off vs on): +5.6 pts right file in context.
+- **Graph traversal** (Klew with vs without the walk): +1.4 pts right file in context, +1.5 pts top-1.
 
-**Accuracy as the graph learns** (learn from N past commits, then freeze; held-out): right file in context 82.1% → 89.1%, recall@5 57.1% → 62.0%, MRR 55.5% → 58.1% from 0 to 600 commits learned.
+**Accuracy as the graph learns** (learn from N past commits, then freeze; held-out): right file in context 82.0% → 89.1%, recall@5 55.7% → 64.3%, top-1 45.2% → 50.2%, MRR 57.0% → 63.0% from 0 to 600 commits learned.
 
 ![accuracy as the graph learns](docs/img/httpx-learning.png)
 
 ![learning curve over the replay](docs/img/httpx-curve.png)
 
-### flask: 196 held-out commits
+### flask: 196 held-out commits (never used for tuning; every setting came from httpx)
 
 | Approach | Right file in context | Tokens per correct file | Recall@5 | Top-1 | MRR |
 |---|---|---|---|---|---|
 | Vector RAG | 45.1% | 4,393 | 48.8% | 36.7% | 49.1% |
 | BM25 RAG | 53.2% | 3,311 | 55.0% | 39.3% | 51.5% |
-| Klew, learning off | 84.7% | 1,471 | 51.9% | 34.7% | 48.2% |
+| Klew, learning off | 84.7% | 1,472 | 48.5% | 37.8% | 49.7% |
 | Klew without graph traversal | 84.1% | 703 | 60.0% | 44.4% | 56.8% |
-| **Klew** | 89.5% | 2,008 | 58.6% | 37.2% | 52.7% |
-| **Klew + vector seeds** | 90.9% | 2,129 | 59.6% | 43.4% | 56.6% |
+| **Klew** | 89.0% | 2,020 | 60.6% | 43.9% | 57.1% |
+| **Klew + vector seeds** | 91.6% | 2,087 | 60.1% | 46.4% | 58.4% |
 
-- **Learning** (same graph, learning off vs on): +4.7 pts right file in context.
-- **Graph traversal** (Klew with vs without the walk): +5.4 pts right file in context, -7.2 pts top-1.
-- **Ranking in practice:** on the 13 commits where vector RAG was right at #1 and Klew + vector seeds was not, the right file was still in Klew's pack 13 times, typically at #2. The agent got none of the changed files from vector RAG on 80 of 196 commits, and from Klew + vector seeds on 11.
+- **Learning** (same graph, learning off vs on): +4.3 pts right file in context.
+- **Graph traversal** (Klew with vs without the walk): +4.9 pts right file in context, -0.5 pts top-1.
 
-**Accuracy as the graph learns** (learn from N past commits, then freeze; held-out): right file in context 85.2% → 87.7%, recall@5 52.4% → 55.3%, MRR 48.5% → 51.8% from 0 to 600 commits learned.
+**Accuracy as the graph learns** (learn from N past commits, then freeze; held-out): right file in context 85.0% → 87.9%, recall@5 48.5% → 58.3%, top-1 37.8% → 42.4%, MRR 49.4% → 55.0% from 0 to 600 commits learned.
 
 ![accuracy as the graph learns](docs/img/flask-learning.png)
 
 ![learning curve over the replay](docs/img/flask-curve.png)
+
+### ods: 166 held-out commits (never used for tuning; every setting came from httpx)
+
+| Approach | Right file in context | Tokens per correct file | Recall@5 | Top-1 | MRR |
+|---|---|---|---|---|---|
+| Vector RAG | 35.0% | 5,557 | 45.2% | 39.2% | 51.3% |
+| BM25 RAG | 30.7% | 6,282 | 41.8% | 33.7% | 47.0% |
+| Klew, learning off | 69.3% | 2,642 | 41.3% | 33.7% | 46.6% |
+| Klew without graph traversal | 76.9% | 1,206 | 46.6% | 41.6% | 53.3% |
+| **Klew** | 72.4% | 2,702 | 47.3% | 41.6% | 53.5% |
+| **Klew + vector seeds** | 71.9% | 2,753 | 48.3% | 45.8% | 57.2% |
+
+- **Learning** (same graph, learning off vs on): +3.1 pts right file in context.
+- **Graph traversal** (Klew with vs without the walk): -4.4 pts right file in context, +0.0 pts top-1.
+
+**Accuracy as the graph learns** (learn from N past commits, then freeze; held-out): right file in context 68.6% → 69.5%, recall@5 41.7% → 43.8%, top-1 35.5% → 40.4%, MRR 48.3% → 52.0% from 0 to 300 commits learned.
+
+![accuracy as the graph learns](docs/img/ods-learning.png)
+
+![learning curve over the replay](docs/img/ods-curve.png)
 
 Latency: Klew answers in about 0.2–0.4 s per request versus about 15 ms for a vector lookup.
 

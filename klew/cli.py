@@ -76,12 +76,13 @@ def eval_(path: Path = typer.Argument(..., exists=True, file_okay=False),
           reindex_every: int = typer.Option(50), budget: int = typer.Option(2000),
           arms: str = typer.Option("vector,bm25,graph_static,graph_nowalk,graph_learn,graph_hybrid"),
           warm: int = typer.Option(300, help="Pre-window commits the learning arms learn from at install"),
+          tuned_on: int = typer.Option(100, help="Leading commits used for tuning (excluded from held-out); 0 for an unseen repo"),
           out: Path = typer.Option(Path("eval/results"))):
     """Replay git history: every arm retrieves for each commit; the learning arm learns."""
     from .eval.replay import run_replay
     res = run_replay(_rt().store, path, name or path.resolve().name, window=window,
                      reindex_every=reindex_every, budget=budget, arms=tuple(arms.split(",")),
-                     out_dir=out, warm=warm)
+                     out_dir=out, warm=warm, tuned_on=tuned_on)
     typer.echo(json.dumps(res["summary"], indent=1))
 
 

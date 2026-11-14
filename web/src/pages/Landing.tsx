@@ -12,11 +12,12 @@ seed: name match: httpx/_utils.py; learned: 'environment' → this file
       # Gets proxy information from the environment
   def is_ipv6_hostname(hostname: str) -> bool
 
-## httpx/_client.py   score 3.66
-seed: learned: 'variable' → this file
-  def _get_proxy_map( self, proxy: ProxyTypes | None, allow_env_proxies: bool ) …
+## tests/test_utils.py   score 3.18
+seed: learned: 'environment' → this file
+  def test_get_environment_proxies(environment, proxies)
+  def test_url_matches(pattern, url, expected)
 
-1,196 / 1,200 tokens · 244 ms`
+1,198 / 1,200 tokens · 445 ms`
 
 const INSTALL = `git clone <this repo> && cd klew
 docker compose up -d            # local HydraDB node

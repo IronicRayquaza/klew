@@ -42,30 +42,39 @@ function Table({ r, summary }: { r: EvalResult; summary: Record<string, ArmSumma
   )
 }
 
-const ARM_FOR_NOTE = 'graph_hybrid'
-
-function RankingNote({ r, summary }: { r: EvalResult; summary: Record<string, ArmSummary> }) {
-  const v = summary.vector, k = summary[ARM_FOR_NOTE], av = r.agent_view_held_out
-  if (!v || !k || !av || !av.arms[ARM_FOR_NOTE]) return null
-  const behind = v['hit@1'] > k['hit@1'] || v.mrr > k.mrr
-  const a = av.arms[ARM_FOR_NOTE]
-  const pct = (x: number) => `${(x * 100).toFixed(1)}%`
+function HowWeTest({ results }: { results: EvalResult[] | null }) {
+  const t = results?.find((r) => r.repo === (r.tuning_repo ?? 'httpx'))
+  const tune = t?.slices?.tuning, held = t?.slices?.held_out
+  const total = (tune?.commits ?? 0) + (held?.commits ?? 0)
   return (
-    <div className="grid gap-1.5 rounded-xl border border-line bg-card p-4 text-sm">
-      <h3 className="font-bold">{behind ? 'Where vector RAG ranks higher' : 'Ranking in practice'}</h3>
-      {behind && (
-        <p className="text-muted">
-          On {r.repo}, vector RAG puts a changed file at #1 more often (top-1 {pct(v['hit@1'])} vs {pct(k['hit@1'])}, MRR {pct(v.mrr)} vs {pct(k.mrr)}).
-          That is about the order of the list, not about speed or coverage.
-        </p>
+    <section className="grid gap-4 rounded-xl border border-line bg-card p-5">
+      <h2 className="text-xl font-bold">How we test, in plain words</h2>
+      <ol className="grid list-decimal gap-2 pl-5 text-sm">
+        <li><b>We replay real history.</b> We take a repository's real commits in date order. Each commit message (say, “Version 0.20”) is the task, and the files that commit changed are the right answer. Every approach gets the same 2,000-token budget and has to put the right files in front of the agent.</li>
+        <li><b>We split time in two.</b> Klew has a few knobs, such as how strongly to blend in text search. We set them using only the earliest commits, then locked them. Everything we report is measured on the later commits, which we never looked at while setting the knobs. It is like grading a student on questions that weren't in their practice set.</li>
+        <li><b>Learning is different from tuning.</b> Klew's graph keeps learning which files go with which words, but only <i>after</i> it has answered each commit, exactly as it would from a merged pull request. It never sees an answer before answering.</li>
+      </ol>
+      {tune && held && total > 0 && (
+        <div className="grid gap-1.5">
+          <div className="flex h-9 overflow-hidden rounded-lg text-xs font-medium">
+            <div className="flex items-center justify-center bg-line px-2 text-ink" style={{ width: `${(tune.commits / total) * 100}%` }}>
+              Tuning · {tune.commits} commits
+            </div>
+            <div className="flex items-center justify-center bg-trail px-2 text-paper" style={{ width: `${(held.commits / total) * 100}%` }}>
+              Held-out · {held.commits} commits · what we report
+            </div>
+          </div>
+          <div className="flex justify-between text-xs text-muted">
+            <span>{tune.from}</span><span>settings locked after {tune.to}</span><span>{held.to}</span>
+          </div>
+          <p className="text-xs text-muted">
+            Timeline: {t?.repo}.{' '}
+            {(results ?? []).filter((r) => r.repo !== t?.repo).map((r) => r.repo).join(' and ') || 'Other repositories'}{' '}
+            {(results ?? []).filter((r) => r.repo !== t?.repo).length === 1 ? 'was' : 'were'} never used for tuning at all: every commit there is new to Klew.
+          </p>
+        </div>
       )}
-      <p className="text-muted">
-        On the {av.commits} held-out commits, vector RAG was right at #1 and Klew + vector seeds was not on <b className="text-ink">{a.top1_lost}</b> commits.
-        In <b className="text-ink">{a.top1_lost_in_pack} of {a.top1_lost}</b> of them the right file was still in Klew's pack{a.top1_lost_median_rank ? <>, typically at <b className="text-ink">#{a.top1_lost_median_rank}</b></> : null}.
-        The agent got <b className="text-ink">none</b> of the changed files from vector RAG on <b className="text-ink">{av.baseline_none_in_context}</b> of {av.commits} commits, and from Klew + vector seeds on <b className="text-ink">{a.none_in_context}</b>.
-      </p>
-      <p className="text-muted">Latency doesn't depend on ranking order: Klew takes about 0.2–0.4 s per request either way.</p>
-    </div>
+    </section>
   )
 }
 
@@ -74,9 +83,9 @@ function HowToRead() {
     ['Right file in context', 'Share of the changed files that made it into the 2,000-token pack. This is what the agent actually reads, so it is our headline metric.'],
     ['Tokens per correct file', 'Context tokens spent for each changed file that made it in. Lower means cheaper.'],
     ['Recall@5', 'Share of the changed files that appear in the top five, ignoring the budget.'],
-    ['Top-1', 'How often the #1 file is one that changed. It matters most for a single-answer search box; an agent reads the whole pack.'],
+    ['Top-1', 'How often the #1 file is one that changed.'],
     ['MRR', 'Mean reciprocal rank: 1 if the first correct file is #1, ½ at #2, ⅓ at #3, and so on. It rewards putting the right file first.'],
-    ['p50 latency', 'Median time per request. It depends on how many graph queries run, not on the ranking order.'],
+    ['p50 latency', 'Median time per request.'],
   ]
   return (
     <section className="grid gap-3 rounded-xl border border-line bg-card p-5">
@@ -104,12 +113,11 @@ export default function Results() {
         <span className="eyebrow">Evaluation · git-history replay</span>
         <h1 className="text-4xl font-bold">Does it beat a vector store, and does it get sharper?</h1>
         <p className="max-w-3xl text-muted">
-          We replay a repository's real commits in order. Each commit message is the task, and the files that commit
-          changed are the answer. Every approach gets the same 2,000-token budget. Klew learns from each commit
-          after it answers, exactly as it would from a merged PR. The code is re-indexed at the parent commit every 50
-          commits, so nothing sees the future.
+          Real commits, replayed in order, with the same token budget for every approach. The numbers below are on commits
+          that were never used to choose Klew's settings.
         </p>
       </header>
+      <HowWeTest results={ordered} />
       <HowToRead />
       {error && <p className="text-alarm">Could not load results: {error}</p>}
       {!results && !error && <p className="text-muted">Loading results…</p>}
@@ -145,8 +153,13 @@ export default function Results() {
             <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
               <span className="text-muted">
                 {useHeld
-                  ? <>Showing <b className="text-ink">{r.held_out_commits} held-out commits</b>: none of them were used to choose any setting. The first {r.tuned_on_first} commits were used for tuning.</>
-                  : <>Showing <b className="text-ink">all {r.scored} commits</b>, including the {r.tuned_on_first} used for tuning (slightly favourable to Klew).</>}
+                  ? <>Showing <b className="text-ink">{r.held_out_commits} held-out commits</b>{r.slices?.held_out.from ? ` (${r.slices.held_out.from} – ${r.slices.held_out.to})` : ''}.{' '}
+                      {r.repo === r.tuning_repo
+                        ? <>None were used to choose any setting; the first {r.tuned_on_first} ({r.slices?.tuning.from} – {r.slices?.tuning.to}) were.</>
+                        : r.tuned_on_first
+                          ? <>No {r.repo} commit was ever used to choose a setting (all tuning was on {r.tuning_repo ?? 'httpx'}); the first {r.tuned_on_first} are left out only to match httpx.</>
+                          : <>Every commit is new to Klew: no {r.repo} commit was ever used to choose a setting (all tuning was on {r.tuning_repo ?? 'httpx'}).</>}</>
+                  : <>Showing <b className="text-ink">all {r.scored} commits</b>{r.repo === r.tuning_repo ? <>, including the {r.tuned_on_first} used for tuning (slightly favourable to Klew)</> : null}.</>}
               </span>
               <button type="button" onClick={() => setHeldOut(!useHeld)} className="rounded-md border border-line px-2.5 py-1 text-xs text-ink hover:bg-card">
                 {useHeld ? `Show all ${r.scored}` : `Show only the ${r.held_out_commits} held-out commits`}
@@ -154,7 +167,6 @@ export default function Results() {
             </div>
           )}
           <Table r={r} summary={summary} />
-          <RankingNote r={r} summary={summary} />
           <div className="grid gap-4 md:grid-cols-2">
             {learnGain !== null && (
               <div className="grid content-start gap-2 rounded-xl border border-line bg-card p-4">

@@ -1,0 +1,33 @@
+{
+ "repo": "ods",
+ "window": 200,
+ "tuned_on_first": 0,
+ "held_out_commits": 166,
+ "first_commit": "a7ef7d6cb2350c2d44fe2cb214bfbed25c403b2b",
+ "points": [
+  {
+   "learned": 0,
+   "learning": false,
+   "budget_recall": 0.6861,
+   "recall@5": 0.4173,
+   "hit@1": 0.3554,
+   "mrr": 0.483
+  },
+  {
+   "learned": 100,
+   "learning": true,
+   "budget_recall": 0.6719,
+   "recall@5": 0.4358,
+   "hit@1": 0.3795,
+   "mrr": 0.5026
+  },
+  {
+   "learned": 300,
+   "learning": true,
+   "budget_recall": 0.6953,
+   "recall@5": 0.4375,
+   "hit@1": 0.4036,
+   "mrr": 0.5204
+  }
+ ]
+}

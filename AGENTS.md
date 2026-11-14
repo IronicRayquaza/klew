@@ -119,6 +119,23 @@ Status: ✅ done · 🟡 in progress · ⬜ todo
 
 ## Latest changes (newest first)
 
+- **2026-11-15 H16: learning curves re-run with two-stage ranking, now including ODS.** Learning N past commits,
+  then freezing: httpx top-1 45.2 → 50.2, MRR 57.0 → 63.0, r@5 55.7 → 64.3 (0 → 600); flask r@5 48.5 → 58.3, MRR
+  49.4 → 55.0; ODS (unseen; 0 → 300) top-1 35.5 → 40.4, MRR 48.3 → 52.0. `eval/results/learning/*.json`, `docs/img/*-learning.png`.
+- **2026-11-15 H15.5: ODS, a third and unseen repo (Osmantic/ODS: 1,381 files, 26k symbols, 82k edges).**
+  Window of 200 commits, 166 scored, all held out (`--tuned-on 0`). Klew + vector seeds vs vector RAG: in-context
+  71.9% vs 35.0%, r@5 48.3% vs 45.2%, top-1 45.8% vs 39.2%, MRR 57.2% vs 51.3%; tokens/hit ~2.7k vs 5.6k.
+  Learning off → on: top-1 +7.9, MRR +6.9. Caveats: latency ~0.9 s; on ODS the walk costs context (without the walk
+  in-context is 76.9% at half the tokens). Possible fix: scale the walk's budget share with repo size.
+- **2026-11-15 H15: two-stage ranking; Klew now beats vector RAG on every quality metric (held-out, both repos).**
+  - `EngineParams.head_k = 5`: the top 5 files come from direct evidence (seeds, learned links, text fusion; no
+    walk; zero extra queries), and the walk fills the rest. Tuned on httpx's first 100 commits.
+  - Held-out httpx: Klew + vector seeds top-1 56.8% vs 47.2%, MRR 68.8% vs 62.2%, r@5 67.3% vs 63.9%,
+    in-context 95.3% vs 58.1%. Klew alone also beats vector everywhere (top-1 50.7%).
+  - Held-out flask: hybrid top-1 46.4% vs 36.7%, MRR 58.4% vs 49.1%.
+  - Results page: a "How we test, in plain words" explainer with a dated tuning/held-out timeline (`slices` in the results JSON).
+  - X cards in `docs/social/` (`scripts/social_card.py`, rendered from the results).
+  - Learning curves re-run with two-stage (H16), see below.
 - **2026-11-14 H13: held-out reporting, graph ablation, learning curve, rank fusion.**
   - Tuning now uses the first 100 commits; every result has `summary_held_out` (the rest). Runs are deterministic.
   - Rank fusion with a text ranker (BM25, or vector in the hybrid): k=20, weight 0.5, keep the graph's #1.
@@ -236,8 +253,10 @@ Status: ✅ done · 🟡 in progress · ⬜ todo
 ## Known issues / open questions
 
 - The Luma page doesn't list submission requirements. Confirm on Discord.
-- **Claims to make:** right file in context 88–94% vs 49–59% and ~half the tokens per correct file (both
-  repos). Ranking: ahead on flask, level on httpx (hybrid MRR 0.3 below vector; graph-only 2–6 pts below).
+- **Claims to make (current, held-out, three repos):** right file in context 72–95% vs 35–58% at about half the tokens
+  per correct file. Klew beats vector RAG on every quality metric on httpx, flask and ODS, with or without vector
+  seeds (httpx top-1 56.8% vs 47.2%). Slower: ~0.3 s (httpx) to ~0.9 s (ODS) vs ~15–45 ms. On ODS the walk
+  costs context (no-walk is higher); say so if asked.
   Latency ~0.2–0.4 s vs ~15 ms. Don't claim "beats vector on every metric".
 - The demo `httpx` graph has a few learned outcomes from testing (e.g. 'cidr' → `_utils.py`). The landing hero
   shows that output and says so. Re-index for a clean graph.

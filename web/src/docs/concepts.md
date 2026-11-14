@@ -46,7 +46,10 @@ For a task, Klew:
    text by default, or vector search when it's configured. The graph's own #1 is kept, and the rest is
    reordered so files that both rankers like rise. The graph finds structure; text catches wording the
    graph can't see.
-6. **Packs** the budget greedily, up to 30 files: for each file, its header, its most relevant signatures,
+6. **Ranks in two stages.** The top five files come from direct evidence only (the seeds, learned links
+   and text fusion, with no walk), because that is most precise at the head of the list. The walk's ranking
+   fills the rest. This costs no extra queries.
+7. **Packs** the budget greedily, up to 30 files: for each file, its header, its most relevant signatures,
    and (for the top files) the best snippet. Long signatures are trimmed. If nothing matches the task, it
    **abstains** rather than guess.
 

@@ -30,7 +30,10 @@ def block(results: list[dict], curves: dict[str, dict]) -> str:
            "tuning (`scripts/tune.py`), and these are the rest. Every approach gets the same 2,000-token budget.", ""]
     for r in sorted(results, key=lambda d: d["repo"] != "httpx"):
         s = r["summary_held_out"]
-        out += [f"### {r['repo']}: {r['held_out_commits']} held-out commits", ""] + table(s, r["arms"]) + [""]
+        tuned_here = r["repo"] == r.get("tuning_repo", "httpx")
+        note = (f"first {r['tuned_on_first']} commits used for tuning" if tuned_here
+                else "never used for tuning; every setting came from httpx")
+        out += [f"### {r['repo']}: {r['held_out_commits']} held-out commits ({note})", ""] + table(s, r["arms"]) + [""]
         if "graph_static" in s and "graph_learn" in s:
             out.append(f"- **Learning** (same graph, learning off vs on): "
                        f"{(s['graph_learn']['budget_recall'] - s['graph_static']['budget_recall']) * 100:+.1f} pts right file in context.")
@@ -38,23 +41,13 @@ def block(results: list[dict], curves: dict[str, dict]) -> str:
             out.append(f"- **Graph traversal** (Klew with vs without the walk): "
                        f"{(s['graph_learn']['budget_recall'] - s['graph_nowalk']['budget_recall']) * 100:+.1f} pts right file in context, "
                        f"{(s['graph_learn']['hit@1'] - s['graph_nowalk']['hit@1']) * 100:+.1f} pts top-1.")
-        av = r.get("agent_view_held_out")
-        if av and "graph_hybrid" in av["arms"] and "vector" in s:
-            a = av["arms"]["graph_hybrid"]
-            behind = s["vector"]["hit@1"] > s["graph_hybrid"]["hit@1"] or s["vector"]["mrr"] > s["graph_hybrid"]["mrr"]
-            lead = (f"- **Where vector RAG ranks higher** (top-1 {s['vector']['hit@1']:.1%} vs {s['graph_hybrid']['hit@1']:.1%}, "
-                    f"MRR {s['vector']['mrr']:.1%} vs {s['graph_hybrid']['mrr']:.1%}), it is about order, not speed or coverage: "
-                    if behind else "- **Ranking in practice:** ")
-            out.append(lead + f"on the {a['top1_lost']} commits where vector RAG was right at #1 and Klew + vector seeds was not, "
-                       f"the right file was still in Klew's pack {a['top1_lost_in_pack']} times, typically at "
-                       f"#{a['top1_lost_median_rank']:.0f}. The agent got none of the changed files from vector RAG on "
-                       f"{av['baseline_none_in_context']} of {av['commits']} commits, and from Klew + vector seeds on {a['none_in_context']}.")
         c = curves.get(r["repo"])
         if c:
             p0, pn = c["points"][0], c["points"][-1]
             out += ["", f"**Accuracy as the graph learns** (learn from N past commits, then freeze; held-out): "
                     f"right file in context {p0['budget_recall']:.1%} → {pn['budget_recall']:.1%}, "
-                    f"recall@5 {p0['recall@5']:.1%} → {pn['recall@5']:.1%}, MRR {p0['mrr']:.1%} → {pn['mrr']:.1%} "
+                    f"recall@5 {p0['recall@5']:.1%} → {pn['recall@5']:.1%}, top-1 {p0['hit@1']:.1%} → {pn['hit@1']:.1%}, "
+                    f"MRR {p0['mrr']:.1%} → {pn['mrr']:.1%} "
                     f"from 0 to {pn['learned']} commits learned.", "",
                     f"![accuracy as the graph learns](docs/img/{r['repo']}-learning.png)"]
         out += ["", f"![learning curve over the replay](docs/img/{r['repo']}-curve.png)", ""]

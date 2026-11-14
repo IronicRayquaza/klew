@@ -31,6 +31,8 @@ from ..services.index import IndexService
 
 log = structlog.get_logger()
 
+TUNING_REPO = "httpx"   # every engine setting was chosen on this repo's first 100 commits only
+
 
 @dataclass
 class ArmResult:
@@ -198,6 +200,8 @@ def run_replay(store: GraphStore, repo_root: Path, name: str, *, window: int = 3
         "tuned_on_first": tuned_on, "held_out_commits": len(held_out),
         "summary_held_out": summary_held_out,
         "agent_view_held_out": agent_view([asdict(r) for r in held_out], arms) if held_out and "vector" in arms else None,
+        "slices": slice_dates(repo_root, [asdict(r) for r in records], tuned_on),
+        "tuning_repo": TUNING_REPO,
         "params": asdict(params or EngineParams()), "warm_start": warm,
         "runtime_s": round(time.perf_counter() - t_start, 1), "reindex_s": round(reindex_s, 1),
         "records": [asdict(r) for r in records],
@@ -207,6 +211,22 @@ def run_replay(store: GraphStore, repo_root: Path, name: str, *, window: int = 3
         (out_dir / f"{name}.json").write_text(json.dumps(result, indent=1))
     remove_worktree(repo_root, snap)
     return result
+
+
+def slice_dates(repo_root: Path, records: list[dict], tuned_on: int) -> dict:
+    """Commit count and month range of the tuning slice and the held-out slice (for plain-language display)."""
+    import subprocess
+
+    def month(sha: str) -> str:
+        return subprocess.run(["git", "-C", str(repo_root), "log", "-1", "--format=%cd", "--date=format:%b %Y", sha],
+                              capture_output=True, text=True).stdout.strip()
+
+    out = {}
+    for name, part in (("tuning", [r for r in records if r["i"] < tuned_on]),
+                       ("held_out", [r for r in records if r["i"] >= tuned_on])):
+        out[name] = {"commits": len(part), "from": month(part[0]["sha"]) if part else None,
+                     "to": month(part[-1]["sha"]) if part else None}
+    return out
 
 
 def agent_view(records: list[dict], arms, baseline: str = "vector") -> dict:

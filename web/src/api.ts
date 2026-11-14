@@ -26,6 +26,8 @@ export type EvalResult = {
   summary: Record<string, ArmSummary>
   summary_held_out?: Record<string, ArmSummary> | null
   tuned_on_first?: number
+  tuning_repo?: string
+  slices?: { tuning: { commits: number; from: string | null; to: string | null }; held_out: { commits: number; from: string | null; to: string | null } }
   held_out_commits?: number
   agent_view_held_out?: {
     baseline: string; commits: number; baseline_none_in_context: number

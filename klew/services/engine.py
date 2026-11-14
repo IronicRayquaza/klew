@@ -46,6 +46,8 @@ class EngineParams:
     fusion_k: int = 20             # reciprocal rank fusion with a text ranker (vector, else BM25); 0 = off
     fusion_weight: float = 0.5     # tuned on the first 100 httpx commits
     fusion_keep_top: int = 1       # keep the graph's own #1, fuse the rest
+    head_k: int = 5                # two-stage (tuned, held-in): the top-k files come from direct evidence (seeds,
+                                   # learned links, text fusion; no walk); the walk fills the rest
     learn: learning.LearnParams = field(default_factory=learning.LearnParams)
 
 
@@ -149,12 +151,15 @@ class RepoEngine:
             ranked = promote_companions(ranked, self._companions(ranked[: self.p.companion_top_k]),
                                         self.p.companion_top_k, self.p.companion_weight,
                                         protect=self.p.companion_protect)
+        ext_ids: list[int] = []
         if self.p.fusion_k > 0 and ranked:
             ext = self._rank_for_fusion(task)
+            ext_ids = [self.fid_of[p] for p in ext if p in self.fid_of]
             label = "vector match" if self.external_rank is not None else "text match"
-            ranked = fuse_ranks(ranked, [self.fid_of[p] for p in ext if p in self.fid_of],
-                                self.p.fusion_k, self.p.fusion_weight, label,
+            ranked = fuse_ranks(ranked, ext_ids, self.p.fusion_k, self.p.fusion_weight, label,
                                 keep_top=self.p.fusion_keep_top)
+        if self.p.head_k > 0 and ranked:
+            ranked = self._two_stage(seeds, ranked, ext_ids, include_tests)
         t_rank = time.perf_counter()
 
         need = [sid for rf in ranked[:24] for sid, _ in rf.symbols[:4]]
@@ -183,6 +188,24 @@ class RepoEngine:
         if record:
             self._record_run(pack_, source)
         return pack_
+
+    def _two_stage(self, seeds, walked, ext_ids, include_tests):
+        """Head from direct evidence only (no traversal: zero extra graph queries), tail from the walk.
+        The ablation showed direct evidence wins the top of the ranking while the walk adds coverage."""
+        direct = walk(self.store, seeds, hops=0)
+        head = rank_files(direct, self.sym_file, set(self.path_of),
+                          exclude_tests=None if include_tests else self.test_files,
+                          file_size=self.file_size, hub_damping=self.p.hub_damping)
+        if self.p.fusion_k > 0 and ext_ids:
+            label = "vector match" if self.external_rank is not None else "text match"
+            head = fuse_ranks(head, ext_ids, self.p.fusion_k, self.p.fusion_weight, label,
+                              keep_top=self.p.fusion_keep_top)
+        top = head[: self.p.head_k]
+        top_ids = {r.file_id for r in top}
+        by_walk = {r.file_id: r for r in walked}
+        # Prefer the walk's record for a head file (richer symbols); keep the head order.
+        merged = [by_walk.get(r.file_id, r) for r in top]
+        return merged + [r for r in walked if r.file_id not in top_ids]
 
     def _rank_for_fusion(self, task: str) -> list[str]:
         if self.external_rank is not None:

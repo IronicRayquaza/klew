@@ -29,6 +29,7 @@ def main() -> None:
     ap.add_argument("--window", type=int, default=300)
     ap.add_argument("--tuned-on", type=int, default=100)
     ap.add_argument("--steps", default="0,50,100,200,400,600")
+    ap.add_argument("--reindex-every", type=int, default=50)
     ap.add_argument("--out", type=Path, default=Path("eval/results/learning"))
     a = ap.parse_args()
     store = HydraGraphStore()
@@ -36,6 +37,7 @@ def main() -> None:
 
     for n in [int(x) for x in a.steps.split(",")]:
         r = run_replay(store, a.repo, f"lc-{a.name}", window=a.window, arms=("graph_learn",),
+                       reindex_every=a.reindex_every,
                        write=False, warm=n, tuned_on=a.tuned_on, params=replace(EngineParams()),
                        learn_online=False)
         s = r["summary_held_out"]["graph_learn"]
