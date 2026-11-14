@@ -23,6 +23,28 @@ class RankedFile:
     score: float
     symbols: list[tuple[int, float]]   # (symbol_id, score), best first
     anchor: int                         # node whose why-path explains this file
+    via: tuple[int, str] | None = None  # (parent file, relation) when promoted as a companion
+
+
+def promote_companions(ranked: list[RankedFile], companions: dict[int, list[tuple[int, str]]],
+                       top_k: int, weight: float) -> list[RankedFile]:
+    """Pull each top file's companions (its test file, its strongest co-change partner) up to
+    `weight` x the parent's score. A change to one file usually touches its companions too."""
+    if weight <= 0 or not companions:
+        return ranked
+    by_id = {r.file_id: r for r in ranked}
+    for parent in ranked[:top_k]:
+        for cid, label in companions.get(parent.file_id, []):
+            target = parent.score * weight
+            cur = by_id.get(cid)
+            if cur is None:
+                cur = RankedFile(cid, target, [], cid, (parent.file_id, label))
+                ranked.append(cur)
+                by_id[cid] = cur
+            elif cur.score < target:
+                cur.score = target
+                cur.via = cur.via or (parent.file_id, label)
+    return sorted(ranked, key=lambda r: -r.score)
 
 
 def rank_files(res: WalkResult, sym_file: dict[int, int], file_ids: set[int],
@@ -52,7 +74,12 @@ def rank_files(res: WalkResult, sym_file: dict[int, int], file_ids: set[int],
     return sorted(out, key=lambda r: -r.score)
 
 
-def why_path(res: WalkResult, rf: RankedFile, key_of: Callable[[int], str]) -> list[PathStep]:
+def why_path(res: WalkResult, rf: RankedFile, key_of: Callable[[int], str],
+             by_id: dict[int, RankedFile] | None = None) -> list[PathStep]:
+    if rf.via is not None and (rf.anchor not in res.visits or rf.anchor == rf.file_id):
+        parent, label = rf.via
+        base = why_path(res, by_id[parent], key_of, by_id) if by_id and parent in by_id else []
+        return [*base, PathStep(node_id=rf.file_id, node=key_of(rf.file_id), via=label)]
     if rf.anchor not in res.visits:
         return []
     steps = [PathStep(node_id=n, node=key_of(n), via=via, weight=w)
@@ -66,9 +93,11 @@ def pack(ranked: list[RankedFile], budget: int, *, path_of: Callable[[int], str]
          sym_rows: dict[int, dict], snippet_of: Callable[[str, int, int], str] | None,
          why_of: Callable[[RankedFile], list[PathStep]], seed_reason: dict[int, str],
          max_items: int = 12) -> list[ContextItem]:
+    """Greedy: header + top signatures (+ snippet for the first few) per file until the budget or
+    `max_items` is reached. Files that don't fit are skipped, so smaller ones can still fill gaps."""
     items: list[ContextItem] = []
     used = 0
-    for rf in ranked[:max_items * 2]:
+    for rf in ranked[:max_items * 3]:
         if len(items) >= max_items:
             break
         path = path_of(rf.file_id)

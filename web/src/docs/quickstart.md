@@ -24,11 +24,12 @@ uv venv --python 3.12 .venv && uv pip install -e .
 
 ```bash
 .venv/bin/desirepath index ~/code/your-repo
-# indexed your-repo: 60 files, 1240 symbols, 3821 edges in 0.9s
+# indexed httpx: 60 files, 1240 symbols, 3821 edges in 2.8s; learned from 268 past commits
 ```
 
 This parses every Python file with tree-sitter and mines up to 2,000 commits of git history for files that
-change together. Everything is written to HydraDB.
+change together. It then learns from the last 300 commits (warm start), which took about two minutes on httpx.
+Everything is written to HydraDB. Use `--learn-history 0` to skip learning.
 
 ## 4. Ask for context
 

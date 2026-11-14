@@ -37,7 +37,8 @@ class Runtime:
         self._engines: dict[str, RepoEngine] = {}
         self._lock = threading.Lock()
 
-    def index(self, root: Path, repo: str | None = None, history: int | None = 2000) -> IndexReport:
+    def index(self, root: Path, repo: str | None = None, history: int | None = 2000,
+              learn_history: int = 0) -> IndexReport:
         root = root.resolve()
         repo = repo or repo_key_for(root)
         hist = None
@@ -49,6 +50,9 @@ class Runtime:
                                         "root": str(root), "head": head}])
         with self._lock:
             self._engines.pop(repo, None)
+        if learn_history and hist:
+            from .services.engine import warm_start
+            rep.learned = warm_start(self.engine(repo, root), hist, limit=learn_history)
         return rep
 
     def repos(self) -> list[dict]:

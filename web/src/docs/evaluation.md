@@ -46,7 +46,7 @@ The live tables and learning curves are on the [Results](#results) page. They're
   held out.
 - On its own, without vector seeds, Desirepath still ranks the single best file first slightly less often
   than vector RAG on httpx. With vector seeds, it beats vector RAG on every quality metric on both repositories.
-- Latency is higher: about 350 ms per request versus about 15 ms for a vector lookup.
+- Latency is higher: about half a second per request versus about 15 ms for a vector lookup.
 
 ## Reproduce
 

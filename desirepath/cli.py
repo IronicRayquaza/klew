@@ -18,11 +18,13 @@ def _rt():
 @app.command()
 def index(path: Path = typer.Argument(Path("."), exists=True, file_okay=False),
           name: str = typer.Option(None, help="Repo key (default: directory name)"),
-          history: int = typer.Option(2000, help="Commits of git history to mine for co-change")):
-    """Index a repository into the code graph."""
-    rep = _rt().index(path, name, history)
+          history: int = typer.Option(2000, help="Commits of git history to mine for co-change"),
+          learn_history: int = typer.Option(300, help="Past commits to learn from at install (0 = off)")):
+    """Index a repository into the code graph, then learn from its recent history."""
+    rep = _rt().index(path, name, history, learn_history=learn_history)
     typer.echo(f"indexed {rep.repo}: {rep.files} files, {rep.symbols} symbols, "
-               f"{sum(rep.edges.values())} edges in {rep.seconds}s")
+               f"{sum(rep.edges.values())} edges in {rep.seconds}s"
+               + (f"; learned from {rep.learned} past commits" if rep.learned else ""))
 
 
 @app.command()
@@ -72,12 +74,13 @@ def eval_(path: Path = typer.Argument(..., exists=True, file_okay=False),
           name: str = typer.Option(None), window: int = typer.Option(300),
           reindex_every: int = typer.Option(50), budget: int = typer.Option(2000),
           arms: str = typer.Option("vector,bm25,graph_static,graph_learn,graph_hybrid"),
+          warm: int = typer.Option(300, help="Pre-window commits the learning arms learn from at install"),
           out: Path = typer.Option(Path("eval/results"))):
     """Replay git history: every arm retrieves for each commit; the learning arm learns."""
     from .eval.replay import run_replay
     res = run_replay(_rt().store, path, name or path.resolve().name, window=window,
                      reindex_every=reindex_every, budget=budget, arms=tuple(arms.split(",")),
-                     out_dir=out)
+                     out_dir=out, warm=warm)
     typer.echo(json.dumps(res["summary"], indent=1))
 
 

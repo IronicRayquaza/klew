@@ -16,7 +16,7 @@ import structlog
 from .. import ids
 from ..adapters.source_reader import read_span
 from ..domain import learning, seeder
-from ..domain.packer import pack, rank_files, why_path
+from ..domain.packer import pack, promote_companions, rank_files, why_path
 from ..domain.walker import walk
 from ..models import ContextPack, LearnReport, Timings
 from ..ports import GraphStore
@@ -38,6 +38,9 @@ class EngineParams:
     use_learned: bool = True
     external_weight: float = 1.0
     hub_damping: float = 0.5  # tuned on the held-in slice (first 50 httpx commits)
+    max_items: int = 30            # cap on files per pack (12 left ~40% of the budget unused)
+    companion_weight: float = 0.4  # pulls in top files' tests and co-change partners (tuned, held-in)
+    companion_top_k: int = 3
     learn: learning.LearnParams = field(default_factory=learning.LearnParams)
 
 
@@ -69,6 +72,7 @@ class RepoEngine:
         self.path_of = {f["id"]: f["path"] for f in files}
         self.fid_of = {f["path"]: f["id"] for f in files}
         self.test_files = {f["id"] for f in files if f.get("is_test")}
+        self.tests_for = _test_companions(files)
         self.sym_file = {s["id"]: s["file_id"] for s in syms}
         self.file_size: dict[int, int] = {}
         for fid in self.sym_file.values():
@@ -126,6 +130,9 @@ class RepoEngine:
         ranked = rank_files(res, self.sym_file, set(self.path_of),
                             exclude_tests=None if include_tests else self.test_files,
                             file_size=self.file_size, hub_damping=self.p.hub_damping)
+        if self.p.companion_weight > 0 and ranked:
+            ranked = promote_companions(ranked, self._companions(ranked[: self.p.companion_top_k]),
+                                        self.p.companion_top_k, self.p.companion_weight)
         t_rank = time.perf_counter()
 
         need = [sid for rf in ranked[:24] for sid, _ in rf.symbols[:4]]
@@ -133,9 +140,11 @@ class RepoEngine:
         root = self.root
         snippet_of = (lambda p, s, e: read_span(root, p, s, e)) if root else None
         reasons = {s.node_id: s.reason for s in seeds}
+        by_id = {r.file_id: r for r in ranked}
         items = pack(ranked, budget_tokens, path_of=lambda f: self.path_of.get(f, str(f)),
                      sym_rows=rows, snippet_of=snippet_of,
-                     why_of=lambda rf: why_path(res, rf, self.key_of), seed_reason=reasons)
+                     why_of=lambda rf: why_path(res, rf, self.key_of, by_id), seed_reason=reasons,
+                     max_items=self.p.max_items)
         t_pack = time.perf_counter()
 
         pack_ = ContextPack(
@@ -151,6 +160,19 @@ class RepoEngine:
         if record:
             self._record_run(pack_, source)
         return pack_
+
+    def _companions(self, top) -> dict[int, list[tuple[int, str]]]:
+        """Test file(s) by name, plus the strongest co-change partner (one HydraDB query)."""
+        out: dict[int, list[tuple[int, str]]] = {}
+        for r in top:
+            out[r.file_id] = [(t, "tested in") for t in self.tests_for.get(r.file_id, [])[:1]]
+        best: dict[int, tuple[float, int]] = {}
+        for n in self.store.expand(CO_CHANGED, "out", [r.file_id for r in top]):
+            if n.w > best.get(n.src, (0.0, 0))[0]:
+                best[n.src] = (n.w, n.dst)
+        for src, (_, dst) in best.items():
+            out.setdefault(src, []).append((dst, "changes with"))
+        return out
 
     def ranked_paths(self, task: str, k: int = 20) -> list[str]:
         """Ranking only (no packing); used by the eval for recall@k."""
@@ -214,3 +236,34 @@ class RepoEngine:
 
 def _ms(a: float, b: float | None = None) -> float:
     return round(((b if b is not None else time.perf_counter()) - a) * 1000, 2)
+
+
+def _test_companions(files: list[dict]) -> dict[int, list[int]]:
+    """Map source files to test files by name: tests/**/test_urls.py ↔ pkg/_urls.py or pkg/urls.py."""
+    by_stem: dict[str, list[int]] = {}
+    for f in files:
+        if f.get("is_test"):
+            name = f["path"].rsplit("/", 1)[-1].removesuffix(".py")
+            if name.startswith("test_"):
+                by_stem.setdefault(name[5:], []).append(f["id"])
+    out: dict[int, list[int]] = {}
+    for f in files:
+        if not f.get("is_test"):
+            stem = f["path"].rsplit("/", 1)[-1].removesuffix(".py").lstrip("_")
+            if stem in by_stem:
+                out[f["id"]] = by_stem[stem]
+    return out
+
+
+def warm_start(engine: RepoEngine, history: list, limit: int = 300, max_files: int = 8) -> int:
+    """Learn from the repository's own past commits, so a fresh install starts with a learned graph.
+    Each commit message is a task; the .py files it modified (that still exist) are the outcome."""
+    n = 0
+    for c in history[-limit:]:
+        truth = [f for f in c.changed if f in engine.fid_of]
+        if not truth or len(c.changed) > max_files:
+            continue
+        pack = engine.get_context(c.task, 2000, record=False, source="warm-start")
+        engine.record_outcome(pack.run_id, truth)
+        n += 1
+    return n

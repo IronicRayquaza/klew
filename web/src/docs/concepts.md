@@ -39,9 +39,12 @@ For a task, Desirepath:
    that first reached it, which becomes its **why-path**.
 3. **Ranks** files by the relevance that reached them, divided by `(1 + ln(1 + symbols in file))^0.5`. Large
    central files otherwise collect relevance from everywhere and win by default.
-4. **Packs** the budget greedily: for each file, its header, its most relevant signatures, and (for the
-   top files) the best snippet. Long signatures are trimmed. If nothing matches the task, it **abstains**
-   rather than guess.
+4. **Adds companions**: for the top three files, it pulls in their test file (matched by name) and their
+   strongest co-change partner at 0.4× the parent's score. A change to one file usually touches those too,
+   and each companion's why-path says so (`tested in`, `changes with`).
+5. **Packs** the budget greedily, up to 30 files: for each file, its header, its most relevant signatures,
+   and (for the top files) the best snippet. Long signatures are trimmed. If nothing matches the task, it
+   **abstains** rather than guess.
 
 ## Learn
 
@@ -55,6 +58,10 @@ When an outcome arrives (`record_outcome`, `learn-git`, or the GitHub Action):
 
 Sweeping changes that touch more than 12 files are skipped as too noisy to learn from. Weights stay
 between 0 and 1, so no single run can dominate.
+
+**Warm start.** `desirepath index` replays the repository's last 300 commits through this same rule, using
+each commit message as the task and the files it modified as the outcome. A fresh install starts with a
+graph that has already learned how your team's words map to your code.
 
 ## Why not a vector store?
 

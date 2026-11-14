@@ -26,7 +26,7 @@ from .. import ids
 from ..adapters.git_miner import Commit, commits, remove_worktree, worktree
 from ..ports import GraphStore
 from ..schema import FILE, SYMBOL
-from ..services.engine import EngineParams, RepoEngine
+from ..services.engine import EngineParams, RepoEngine, warm_start
 from ..services.index import IndexService
 
 log = structlog.get_logger()
@@ -83,7 +83,7 @@ def run_replay(store: GraphStore, repo_root: Path, name: str, *, window: int = 3
                arms: tuple[str, ...] = ("vector", "bm25", "graph_static", "graph_learn"),
                out_dir: Path = Path("eval/results"), work_dir: Path = Path(".desirepath/eval"),
                params: EngineParams | None = None, head: int | None = None,
-               write: bool = True) -> dict:
+               write: bool = True, warm: int = 0) -> dict:
     """`head` limits the replay to the first N commits of the window (the held-in tuning slice)."""
     t_start = time.perf_counter()
     all_commits = commits(repo_root)
@@ -126,6 +126,12 @@ def run_replay(store: GraphStore, repo_root: Path, name: str, *, window: int = 3
                 if arm == "graph_hybrid":
                     ext = lambda task: retrievers["vector"].file_scores(task)  # noqa: E731
                 engines[arm] = RepoEngine(store, keys[arm], snap, params, external_seeds=ext)
+                if warm:
+                    # Install-time learning from history strictly before the window: no leakage.
+                    if arm == "graph_hybrid" and "vector" not in retrievers:
+                        from ..baselines.vector import VectorRetriever
+                        retrievers["vector"] = VectorRetriever(snap)
+                    warm_start(engines[arm], hist, limit=warm, max_files=max_truth)
             else:
                 _sync_learn_arm(store, keys[arm], snap, svc)
                 engines[arm].reload()
@@ -179,7 +185,7 @@ def run_replay(store: GraphStore, repo_root: Path, name: str, *, window: int = 3
         "first_commit": first_sha, "last_commit": window_commits[-1].sha,
         "history_commits_before_window": first_idx, "arms": list(arms),
         "summary": summary, "curves": curves(records, arms),
-        "params": asdict(params or EngineParams()),
+        "params": asdict(params or EngineParams()), "warm_start": warm,
         "runtime_s": round(time.perf_counter() - t_start, 1), "reindex_s": round(reindex_s, 1),
         "records": [asdict(r) for r in records],
     }

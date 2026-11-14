@@ -3,20 +3,20 @@ import { Curve } from '../components/Curve'
 import { useEvalResults } from '../useEval'
 
 // Real output of `desirepath context --repo httpx "Support NO_PROXY environment variable with CIDR ranges" --budget 1200`
-// after one recorded outcome on this task touched httpx/_utils.py (trimmed to two items). Regenerate if ranking changes.
+// right after `desirepath index` (warm start learned from 268 past commits). Trimmed to two items.
 const HERO_SAMPLE = `> get_context("Support NO_PROXY environment variable with CIDR ranges")
 
-## httpx/_utils.py   score 4.54
-seed: name match: httpx/_utils.py; learned: 'cidr' → this file
+## httpx/_utils.py   score 5.47
+seed: name match: httpx/_utils.py; learned: 'environment' → this file
   def get_environment_proxies() -> dict[str, str | None]
       # Gets proxy information from the environment
   def is_ipv6_hostname(hostname: str) -> bool
 
-## httpx/_client.py   score 4.24
-why: BaseClient._get_proxy_map → defined in httpx/_client.py
+## httpx/_client.py   score 3.52
+seed: learned: 'variable' → this file
   def _get_proxy_map( self, proxy: ProxyTypes | None, allow_env_proxies: bool ) …
 
-1,198 / 1,200 tokens · 278 ms`
+1,200 / 1,200 tokens · 571 ms`
 
 const INSTALL = `git clone <this repo> && cd desirepath
 docker compose up -d            # local HydraDB node
@@ -101,7 +101,7 @@ export default function Landing() {
         </div>
         <figure className="grid min-w-0 gap-2">
           <pre className="overflow-x-auto rounded-xl border border-line bg-card p-5 font-mono text-[0.8rem] leading-6 text-ink">{HERO_SAMPLE}</pre>
-          <figcaption className="text-xs text-muted">Real output on httpx after one recorded outcome. The learned link from “cidr” moved the file that handles NO_PROXY to the top.</figcaption>
+          <figcaption className="text-xs text-muted">Real output on a fresh install of httpx. Indexing learned from the repo’s last 268 commits, so the file that handles NO_PROXY is already on top.</figcaption>
         </figure>
       </section>
 

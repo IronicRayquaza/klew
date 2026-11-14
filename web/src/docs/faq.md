@@ -24,11 +24,12 @@ that keep being served but not touched decay, and sweeping changes of more than 
 **Does it replace vector search?**
 It doesn't have to. On its own, Desirepath beats vector RAG at getting the right files into a fixed budget.
 With vector results as extra seeds, it beats vector RAG on every quality metric we measure, including which
-file it ranks first. The cost is latency: about 350 ms per request versus about 15 ms for a vector lookup. See [Evaluation](#docs/evaluation).
+file it ranks first. The cost is latency: about half a second per request versus about 15 ms for a vector lookup. See [Evaluation](#docs/evaluation).
 
 **How fast is it?**
 On httpx (60 files, 1,240 symbols), indexing takes about a second and a context pack takes about
-150–350 ms, using 20–35 HydraDB queries.
+about half a second (median 555 ms on a laptop) using 25 HydraDB queries. Making the walk faster is
+next on our list.
 
 **Is it production-ready?**
 It's a hackathon build with tests, CI and an evaluation harness. The local setup uses HydraDB's plaintext

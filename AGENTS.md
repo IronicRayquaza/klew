@@ -103,7 +103,23 @@ Status: ✅ done · 🟡 in progress · ⬜ todo
 
 ## Latest changes (newest first)
 
-- **2026-11-14 H9.5: hub damping + docs site.**
+- **2026-11-14 H10: budget filling, companions, warm start.** Tuned on the held-in slice, then fully re-run and promoted.
+  - `EngineParams.max_items` 12 → 30: packs now use the budget (median ~2,000 of 2,000 tokens; before, ~1,150).
+  - `companion_weight` 0.4: each of the top 3 files pulls in its test file (by name) and its strongest
+    co-change partner; why-path steps `tested in` / `changes with`.
+  - Warm start: `desirepath index` learns from the last 300 commits (`--learn-history`, `services/engine.py::warm_start`).
+    httpx: "learned from 268 past commits" in ~2 min. Eval: `--warm 300` (history strictly before the window).
+
+    | | httpx in-ctx | flask in-ctx | httpx r@5 / top-1 | flask r@5 / top-1 | tok/hit httpx | p50 |
+    |---|---|---|---|---|---|---|
+    | Vector RAG | 59.3% | 49.0% | 63.7% / 50.5% | 52.8% / 40.2% | 3,328 | ~15 ms |
+    | Desirepath | 88.8% | 88.3% | 58.9% / 48.5% | 59.0% / 40.9% | 2,014 | ~460 ms |
+    | Desirepath + vector seeds | **94.2%** | **93.3%** | **64.1% / 51.2%** | **66.6% / 45.6%** | 2,021 | ~490 ms |
+
+  - Costs: tokens per correct file rose (we now use the budget; still well under vector), and latency is
+    ~0.5 s (more learned links + 1 companion query). The faster walk is the fix.
+  - The demo graphs `httpx` and `flask` are warm-started. Landing hero = real fresh-install output. Docs updated.
+- **2026-11-14 H9.5: hub damping + docs site.** (results superseded by H10)
   - Ranking divides file scores by `(1 + ln(1 + symbols))^0.5` (`EngineParams.hub_damping`, tuned on the
     held-in slice). Final results were re-run and promoted:
 
@@ -164,7 +180,9 @@ Status: ✅ done · 🟡 in progress · ⬜ todo
   - Check at 390px and 1280px in both themes; the page must not scroll horizontally.
 - **Everyone:** confirm submission rules on Discord; make the repo public before submitting; record the
   video (`docs/VIDEO.md`); deploy `web/` as a static site.
-- **A (optional):** TypeScript parsing, a third eval repo, pruning of learned edges with misses ≫ hits.
+- **A:** relevance cutoff (stop packing when score < x% of top; tune held-in), budget sweep chart
+  (500–4,000 tokens, vector vs Desirepath), faster walk (parallel expansions / `algo.MSpaths`), budget presets
+  (Lean 1k / Balanced 2k / Deep 4k). Optional: TypeScript parsing, a third eval repo.
 
 ## Known issues / open questions
 

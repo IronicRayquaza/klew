@@ -6,14 +6,16 @@ Every command reads the HydraDB connection from `HYDRA_URI`, `HYDRA_TOKEN` and `
 ## `desirepath index [PATH]`
 
 Builds the code graph for a repository. It parses every Python file with tree-sitter (symbols, signatures,
-docstrings, calls, imports, inheritance, tests) and mines git history for files that change together.
-Re-running it replaces the repository's graph.
+docstrings, calls, imports, inheritance, tests) and mines git history for files that change together. It
+then learns from the repository's recent commits (warm start), so the graph is already trained before your
+first query. Re-running it replaces the repository's graph.
 
 | Option | Default | |
 |---|---|---|
 | `PATH` | `.` | Repository directory |
 | `--name` | directory name | Repository key in the graph |
 | `--history` | `2000` | Commits of git history to mine for co-change |
+| `--learn-history` | `300` | Past commits to learn from at install (`0` turns warm start off) |
 
 ## `desirepath context TASK`
 
@@ -52,6 +54,7 @@ Replays the repository's git history and compares approaches at a fixed token bu
 | `--reindex-every` | `50` | Re-index the snapshot every N commits |
 | `--budget` | `2000` | Token budget for every approach |
 | `--arms` | `vector,bm25,graph_static,graph_learn,graph_hybrid` | Approaches to compare |
+| `--warm` | `300` | Commits before the window that the learning approaches learn from at the start |
 | `--out` | `eval/results` | Output directory |
 
 The `vector` arm needs the extra dependency: `uv pip install -e ".[vector]"`.

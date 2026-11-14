@@ -18,13 +18,13 @@ the graph which paths actually led to the code that changed, so the next map is 
 
 | Arm | Right file in context | Tokens per correct file | Recall@5 | Recall@10 | Top-1 | p50 latency |
 |---|---|---|---|---|---|---|
-| Vector RAG | 49.0% | 4,038 | 52.8% | 66.1% | 40.2% | 13 ms |
+| Vector RAG | 49.0% | 4,038 | 52.8% | 66.1% | 40.2% | 12 ms |
 | BM25 RAG | 55.5% | 3,213 | 58.8% | 72.0% | 40.5% | 0 ms |
-| Graph, no learning | 70.2% | 1,346 | 50.0% | 67.8% | 37.2% | 149 ms |
-| **Desirepath** | 76.6% | 1,511 | 58.5% | 73.5% | 38.2% | 347 ms |
-| **Desirepath + vector seeds** | 83.9% | 1,501 | 63.9% | 81.0% | 44.3% | 381 ms |
+| Graph, no learning | 83.2% | 1,499 | 50.6% | 66.0% | 37.2% | 169 ms |
+| **Desirepath** | 88.3% | 2,049 | 59.0% | 73.6% | 40.9% | 444 ms |
+| **Desirepath + vector seeds** | 93.3% | 2,098 | 66.6% | 80.1% | 45.6% | 488 ms |
 
-Learning alone (same graph, learning on vs off): **+6.5 points** of right-file-in-context.
+Learning alone (same graph, learning on vs off): **+5.1 points** of right-file-in-context.
 
 ![learning curve](docs/img/flask-curve.png)
 
@@ -32,13 +32,13 @@ Learning alone (same graph, learning on vs off): **+6.5 points** of right-file-i
 
 | Arm | Right file in context | Tokens per correct file | Recall@5 | Recall@10 | Top-1 | p50 latency |
 |---|---|---|---|---|---|---|
-| Vector RAG | 59.3% | 3,328 | 63.7% | 79.3% | 50.5% | 20 ms |
+| Vector RAG | 59.3% | 3,328 | 63.7% | 79.3% | 50.5% | 16 ms |
 | BM25 RAG | 49.4% | 3,626 | 57.0% | 68.7% | 42.8% | 0 ms |
-| Graph, no learning | 69.7% | 1,436 | 54.5% | 67.0% | 47.1% | 158 ms |
-| **Desirepath** | 77.3% | 1,483 | 57.2% | 72.8% | 48.1% | 353 ms |
-| **Desirepath + vector seeds** | 83.2% | 1,474 | 64.9% | 80.1% | 52.5% | 382 ms |
+| Graph, no learning | 82.0% | 1,641 | 54.7% | 65.8% | 47.1% | 194 ms |
+| **Desirepath** | 88.8% | 2,014 | 58.9% | 73.2% | 48.5% | 478 ms |
+| **Desirepath + vector seeds** | 94.2% | 2,021 | 64.1% | 80.2% | 51.2% | 500 ms |
 
-Learning alone (same graph, learning on vs off): **+7.6 points** of right-file-in-context.
+Learning alone (same graph, learning on vs off): **+6.8 points** of right-file-in-context.
 
 ![learning curve](docs/img/httpx-curve.png)
 
@@ -85,7 +85,8 @@ Learning alone (same graph, learning on vs off): **+7.6 points** of right-file-i
   `TESTS`, `INHERITS` (structural), `CO_CHANGED`, `POINTS_TO` (learned), `SERVED`, `TOUCHED` (provenance).
 - **Traversal where the graph lives:** each hop is one anchored 1-hop expansion per (edge type, direction),
   e.g. `MATCH (a:DpSymbol)<-[r:CALLS]-(b) WHERE a.id IN $ids RETURN a.id, b.id, r.w`. That's about 34
-  queries and ~200 ms per context pack on httpx.
+  queries and about half a second per context pack on httpx (median 555 ms measured on a
+  warm-started graph, laptop, Docker).
 - **Learning writes back in place:** batched `UNWIND … MERGE (s)-[r:POINTS_TO {id: row.eid}]->(d) SET r.w = row.w`.
 - **Run history as a graph:** every context request becomes a `DpRun` with `SERVED` and `TOUCHED` edges, an
   audit trail of what the agent was shown and what it changed.

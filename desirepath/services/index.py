@@ -27,6 +27,7 @@ class IndexReport:
     symbols: int
     edges: dict[str, int]
     seconds: float
+    learned: int = 0
 
 
 class _Resolver:

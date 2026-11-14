@@ -24,7 +24,8 @@ adapters     HydraGraphStore (Bolt) · MemoryGraphStore · tree-sitter reader ·
 | Audit trail | each request is a `DpRun` node with `SERVED` and `TOUCHED` edges |
 | Explanations | `algo.SPpaths` is available through `GraphStore.shortest_paths` |
 
-A context pack on httpx takes about 20–35 queries and 150–350 ms on a laptop. Indexing writes about
+A context pack on a warm-started httpx graph takes 25 queries and about half a second on a laptop
+(median 555 ms, range 329–643 ms). Indexing writes about
 30,000 vertices per second.
 
 ## HydraDB dialect notes

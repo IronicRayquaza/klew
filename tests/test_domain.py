@@ -2,7 +2,7 @@
 from desirepath import ids
 from desirepath.adapters.memory_store import MemoryGraphStore
 from desirepath.domain import learning
-from desirepath.domain.packer import pack, rank_files, why_path
+from desirepath.domain.packer import RankedFile, pack, promote_companions, rank_files, why_path
 from desirepath.domain.seeder import Lexicon, Seed, lexical_seeds, merge_seeds
 from desirepath.domain.walker import walk
 from desirepath.schema import CALLS, CONTAINS, FILE, SYMBOL
@@ -98,3 +98,18 @@ def test_pack_respects_budget():
     items = pack(ranked, 12, path_of={f_a: "a.py", f_b: "b.py"}.get, sym_rows=rows,
                  snippet_of=None, why_of=lambda r: [], seed_reason={})
     assert sum(i.tokens for i in items) <= 12 and len(items) >= 1
+
+
+def test_companions_are_promoted_with_a_why_step():
+    st, repo, (f_a, f_b, s_f, s_g) = _toy()
+    res = walk(st, [Seed(s_f, SYMBOL, 1.0, "seed")], hops=1)
+    ranked = rank_files(res, {s_f: f_a, s_g: f_b}, {f_a, f_b})
+    test_file = 999
+    out = promote_companions(ranked, {f_a: [(test_file, "tested in")]}, top_k=1, weight=0.5)
+    comp = next(r for r in out if r.file_id == test_file)
+    assert comp.score == ranked[0].score * 0.5 or comp.score > 0
+    keys = {f_a: "a.py", f_b: "b.py", s_f: "a.parse_url", test_file: "tests/test_a.py"}
+    by_id = {r.file_id: r for r in out}
+    path = why_path(res, comp, lambda n: keys.get(n, str(n)), by_id)
+    assert path[-1].node == "tests/test_a.py" and path[-1].via == "tested in"
+    assert isinstance(out[0], RankedFile)

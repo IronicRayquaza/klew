@@ -56,7 +56,8 @@ agent → record_outcome(567736201929104)
         Touched but not served: ['httpx/_transports/default.py']. Edges reinforced 4, created 20, decayed 0.
 ```
 
-These are the real results of this exchange, recorded through the REST API, which runs the same engine.
+These are the real results of this exchange, recorded through the REST API (same engine) during
+development. Scores, timings and the files chosen change as the graph learns and as defaults are tuned.
 
 The server also sends these instructions to the agent: call `get_context` before reading files, and
 `record_outcome` when done.

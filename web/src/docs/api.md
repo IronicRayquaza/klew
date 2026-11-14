@@ -64,7 +64,7 @@ curl -s -X POST http://127.0.0.1:8000/api/context \
 }
 ```
 
-Trimmed for length: the real response has more items and full symbols and snippets. A pack can use less
+Recorded during development; scores and timings change as the graph learns. Trimmed for length: the real response has more items and full symbols and snippets. A pack can use less
 than the budget when the remaining candidates score too low to be worth the tokens.
 
 `budget_tokens` must be between 200 and 32,000. If nothing in the graph matches the task, the response
