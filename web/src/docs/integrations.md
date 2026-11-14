@@ -4,14 +4,16 @@ Klew is one engine with several front doors. Pick the one that fits how your tea
 
 ## What ships today
 
-| Surface | For | Status |
+| Surface | For | How to get it |
 |---|---|---|
-| [MCP server](#docs/mcp) | Claude Code, Cursor, Windsurf, any MCP client | available |
-| [CLI](#docs/cli) | developers and scripts | available |
-| [REST API](#docs/api) | internal tools, dashboards, other agents | available |
-| [GitHub Action](#docs/github-action) | learning from every merged PR | available |
-| [Python library](#docs/library) | embedding the engine in your own agent | available |
-| Web dashboard | trying tasks, seeing why-paths, teaching outcomes | available |
+| [Claude Code plugin](#docs/mcp) | Claude Code | `/plugin install klew --marketplace IronicRayquaza/klew` |
+| [Claude Desktop extension](#docs/mcp) | Claude Desktop | `klew.mcpb` from the GitHub release |
+| [MCP server](#docs/mcp) | Cursor, Windsurf, any MCP client | `npx -y klew mcp` or `uvx klew mcp` |
+| [CLI](#docs/cli) | developers and scripts | `pip install klew` |
+| [REST API](#docs/api) | internal tools, dashboards, other agents | `klew serve` |
+| [GitHub Action](#docs/github-action) | learning from every merged PR | `action/` in the repo |
+| [Python library](#docs/library) | embedding the engine in your own agent | `pip install klew` |
+| Web dashboard | trying tasks, seeing why-paths, teaching outcomes | `web/` in the repo |
 
 ## Coming next
 
@@ -20,7 +22,6 @@ Klew is one engine with several front doors. Pick the one that fits how your tea
 | TypeScript and Go parsing | the graph model is language-agnostic; only the tree-sitter reader is Python-specific today |
 | Hosted team graph | one learned graph per repository, shared by the whole team |
 | Editor extension | context and why-paths beside the code, without an agent |
-| PyPI package | `pip install klew` instead of installing from source |
 
 ## Who it's for
 

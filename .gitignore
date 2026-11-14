@@ -13,3 +13,5 @@ eval/cache/
 .klew/
 .DS_Store
 deploy/hydra_token
+*.tgz
+*.mcpb

@@ -119,6 +119,15 @@ Status: ✅ done · 🟡 in progress · ⬜ todo
 
 ## Latest changes (newest first)
 
+- **2026-11-15 H17: distribution ready (not yet published).** See `docs/PUBLISHING.md`.
+  - PyPI `klew` (wheel + 48 KB sdist; `pip install klew`), with new `klew hydra up/down/status` (local HydraDB in Docker).
+  - npm `klew`: `packages/npm/bin/klew.js` launcher → `uvx --from klew==<ver> klew …` (falls back to pipx/klew; finds uv
+    outside PATH for GUI apps). `KLEW_PY_SPEC` overrides the spec for local testing.
+  - Claude Code plugin: `.claude-plugin/marketplace.json` + `plugins/klew` (MCP server + `klew` skill); passes `claude plugin validate`.
+  - Claude Desktop extension: `packages/mcpb` (node type, same launcher, folder picker) → `dist/klew.mcpb`; schema-valid.
+  - `scripts/build_release.sh` builds all; `scripts/check_versions.py` (also in CI) keeps the 5 version strings in sync.
+  - Verified locally: clean-venv wheel install → index → context; MCP session via the npm launcher; launcher from the
+    unpacked .mcpb with a minimal PATH. **Publish order: PyPI → npm → GitHub release (.mcpb); plugin needs the repo public.**
 - **2026-11-15 H16: learning curves re-run with two-stage ranking, now including ODS.** Learning N past commits,
   then freezing: httpx top-1 45.2 → 50.2, MRR 57.0 → 63.0, r@5 55.7 → 64.3 (0 → 600); flask r@5 48.5 → 58.3, MRR
   49.4 → 55.0; ODS (unseen; 0 → 300) top-1 35.5 → 40.4, MRR 48.3 → 52.0. `eval/results/learning/*.json`, `docs/img/*-learning.png`.

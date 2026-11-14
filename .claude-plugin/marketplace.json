@@ -1,0 +1,14 @@
+{
+  "name": "klew",
+  "owner": { "name": "Klew contributors" },
+  "description": "Klew: self-improving code context for coding agents, built on HydraDB.",
+  "plugins": [
+    {
+      "name": "klew",
+      "source": "./plugins/klew",
+      "description": "Gives Claude a token-budgeted map of the code that matters for each task, found by walking a code graph in HydraDB, and learns from what you actually change.",
+      "category": "development",
+      "tags": ["mcp", "context", "code-graph", "hydradb"]
+    }
+  ]
+}

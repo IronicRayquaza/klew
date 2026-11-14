@@ -10,6 +10,31 @@ app = typer.Typer(add_completion=False, no_args_is_help=True,
                   help="Klew: a self-improving code-context layer for coding agents.")
 
 
+hydra = typer.Typer(no_args_is_help=True, help="Run a local HydraDB node in Docker.")
+app.add_typer(hydra, name="hydra")
+
+
+@hydra.command("up")
+def hydra_up():
+    """Start a local HydraDB node (Docker), creating it on first use."""
+    from .hydra_local import up
+    typer.echo(up())
+
+
+@hydra.command("down")
+def hydra_down():
+    """Stop the local HydraDB node. Data is kept."""
+    from .hydra_local import down
+    typer.echo(down())
+
+
+@hydra.command("status")
+def hydra_status():
+    """Is the local HydraDB node ready?"""
+    from .hydra_local import status
+    typer.echo(status())
+
+
 def _rt():
     from .runtime import get_runtime
     return get_runtime()

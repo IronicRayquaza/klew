@@ -135,30 +135,41 @@ Latency: Klew answers in about 0.2–0.4 s per request versus about 15 ms for a 
 - All Cypher lives in [`klew/adapters/queries.py`](klew/adapters/queries.py), with the dialect
   rules we verified against HydraDB v0.4.0.
 
-## Quickstart
+## Install
+
+Klew needs Docker (for a local HydraDB node) and [uv](https://docs.astral.sh/uv/) or pip.
 
 ```bash
-docker compose up -d                       # HydraDB from ghcr.io/hydra-db/hydradb (local, plaintext)
-uv venv --python 3.12 .venv && uv pip install -e ".[dev]"
-.venv/bin/klew index ~/code/your-repo                 # ~1s for 60 files / 1,200 symbols
-.venv/bin/klew context --repo your-repo "what you want to change"
+pip install klew              # or run without installing: uvx klew …
+klew hydra up                 # local HydraDB node in Docker
+klew index ~/code/your-repo   # build the graph and learn from recent history
+klew context --repo your-repo "what you want to change"
 ```
 
-**Use it from Claude Code** (from inside the repository):
+**Claude Code** (plugin with the MCP server and a skill that tells Claude when to use it):
 
-```bash
-claude mcp add klew -- /path/to/klew/.venv/bin/klew mcp
+```text
+/plugin install klew --marketplace IronicRayquaza/klew
 ```
 
-MCP tools: `get_context(task, budget_tokens)`, `record_outcome(run_id, touched_files?)` (which defaults to
-the working tree's changed files), `explain(task, path)`, and `graph_stats()`. There is deliberately no
-raw-Cypher tool.
+**Claude Desktop**: download `klew.mcpb` from the [latest release](https://github.com/IronicRayquaza/klew/releases)
+and double-click it. It asks for your repository folder.
 
-**Learn from merged PRs:** `klew learn-git <merge-sha>` locally, or the GitHub Action in
-[`action/`](action/action.yml) (see `.github/workflows/klew-learn.example.yml`).
+**Cursor, Windsurf and other MCP clients**:
 
-**Dashboard:** `klew serve` (API on :8000) and `cd web && npm install && npm run dev` (UI on :5173).
-Without the API, the UI falls back to a recorded snapshot.
+```json
+{ "mcpServers": { "klew": { "command": "npx", "args": ["-y", "klew", "mcp"],
+                            "env": { "KLEW_REPO_ROOT": "/absolute/path/to/your/repo" } } } }
+```
+
+MCP tools: `get_context(task, budget_tokens, cutoff)`, `record_outcome(run_id, touched_files?)` (defaults to the
+working tree's changed files), `explain(task, path)`, and `graph_stats()`. There is deliberately no raw-Cypher
+tool.
+
+**Learn from merged PRs:** `klew learn-git <merge-sha>`, or the GitHub Action in [`action/`](action/action.yml).
+
+**From source / dashboard:** `docker compose up -d`, `uv pip install -e ".[dev]"`, `klew serve` (API on :8000)
+and `cd web && npm install && npm run dev` (UI on :5173).
 
 ## Evaluation
 

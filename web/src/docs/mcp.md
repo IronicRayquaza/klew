@@ -6,10 +6,20 @@ start (about a second for 60 files), then warms up so the first call is as fast 
 
 ## Claude Code
 
-```bash
-cd ~/code/your-repo
-claude mcp add klew -- /path/to/klew/.venv/bin/klew mcp
+Install the plugin. It adds the MCP server, pointed at your project, and a skill that tells Claude to call
+`get_context` before reading files and `record_outcome` after editing:
+
+```text
+/plugin install klew --marketplace IronicRayquaza/klew
 ```
+
+Or add just the server: `claude mcp add klew -- uvx klew mcp` from inside the repository.
+
+## Claude Desktop
+
+Download `klew.mcpb` from the [latest release](https://github.com/IronicRayquaza/klew/releases) and
+double-click it. Claude Desktop asks for the repository folder, and optionally a HydraDB address and token.
+It needs [uv](https://docs.astral.sh/uv/) installed.
 
 ## Cursor, Windsurf and other clients
 
@@ -19,13 +29,18 @@ Add a server entry to the client's MCP config. For Cursor that's `.cursor/mcp.js
 {
   "mcpServers": {
     "klew": {
-      "command": "/path/to/klew/.venv/bin/klew",
-      "args": ["mcp"],
+      "command": "npx",
+      "args": ["-y", "klew", "mcp"],
       "env": { "KLEW_REPO_ROOT": "/absolute/path/to/your-repo" }
     }
   }
 }
 ```
+
+The npm package is a small launcher that runs the Python package with `uvx`; `"command": "uvx", "args":
+["klew", "mcp"]` works too.
+
+Before first use, run `uvx klew hydra up` and `uvx klew index /path/to/your-repo` once.
 
 ## Tools
 

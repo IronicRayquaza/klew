@@ -19,11 +19,12 @@ seed: learned: 'environment' → this file
 
 1,198 / 1,200 tokens · 445 ms`
 
-const INSTALL = `git clone <this repo> && cd klew
-docker compose up -d            # local HydraDB node
-uv pip install -e .             # or: pip install -e .
-klew index ~/code/your-repo
-cd ~/code/your-repo && claude mcp add klew -- klew mcp`
+const INSTALL = `pip install klew
+klew hydra up                   # local HydraDB node (Docker)
+klew index ~/code/your-repo     # build the graph, learn from history
+
+# Claude Code
+/plugin install klew --marketplace IronicRayquaza/klew`
 
 function Stat({ value, label, note }: { value: string; label: string; note: string }) {
   return (

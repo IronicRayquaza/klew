@@ -3,6 +3,11 @@
 Every command reads the HydraDB connection from `HYDRA_URI`, `HYDRA_TOKEN` and `HYDRA_GRAPH`
 (see [MCP server → Environment](#docs/mcp)). Repository keys default to the directory name.
 
+## `klew hydra up | down | status`
+
+Runs a local HydraDB node in Docker (container `klew-hydradb`, data in the volume `klew-hydradb-store`).
+`up` creates it on first use and waits until it's ready; `down` stops it and keeps the data.
+
 ## `klew index [PATH]`
 
 Builds the code graph for a repository. It parses every Python file with tree-sitter (symbols, signatures,

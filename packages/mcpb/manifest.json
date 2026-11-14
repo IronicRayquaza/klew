@@ -1,0 +1,61 @@
+{
+  "manifest_version": "0.3",
+  "name": "klew",
+  "display_name": "Klew",
+  "version": "0.1.0",
+  "description": "Gives Claude the files that matter for a coding task, found by walking a code graph in HydraDB, and learns from what you change.",
+  "long_description": "Klew maps a Python repository as a graph in HydraDB (files, symbols, calls, tests, imports and files that change together). For a task, it walks that graph and returns a token-budgeted context pack with the path that justifies each file. Recording what changed teaches the graph, so the next pack is sharper.\n\nRequires uv (https://docs.astral.sh/uv/) and Docker. Before first use, run `uvx klew hydra up` and `uvx klew index /path/to/repo` in a terminal.",
+  "author": { "name": "Klew contributors", "url": "https://github.com/IronicRayquaza/klew" },
+  "repository": { "type": "git", "url": "https://github.com/IronicRayquaza/klew" },
+  "homepage": "https://github.com/IronicRayquaza/klew",
+  "documentation": "https://github.com/IronicRayquaza/klew#readme",
+  "support": "https://github.com/IronicRayquaza/klew/issues",
+  "license": "MIT",
+  "keywords": ["code", "context", "code-graph", "coding-agents", "hydradb"],
+  "server": {
+    "type": "node",
+    "entry_point": "server/index.js",
+    "mcp_config": {
+      "command": "node",
+      "args": ["${__dirname}/server/index.js", "mcp"],
+      "env": {
+        "KLEW_REPO_ROOT": "${user_config.repo_root}",
+        "HYDRA_URI": "${user_config.hydra_uri}",
+        "HYDRA_TOKEN": "${user_config.hydra_token}"
+      }
+    }
+  },
+  "tools": [
+    { "name": "get_context", "description": "Return the code most relevant to a task within a token budget, with the path that justifies each file." },
+    { "name": "record_outcome", "description": "Tell Klew which files a run changed, so the graph learns." },
+    { "name": "explain", "description": "Show what Klew has learned linking a task's words to a file." },
+    { "name": "graph_stats", "description": "Size of the code graph and of what it has learned." }
+  ],
+  "user_config": {
+    "repo_root": {
+      "type": "directory",
+      "title": "Repository",
+      "description": "The repository Klew should map (index it once with `uvx klew index <path>`).",
+      "required": true
+    },
+    "hydra_uri": {
+      "type": "string",
+      "title": "HydraDB address",
+      "description": "Bolt URI of your HydraDB node. The default is the local node started by `uvx klew hydra up`.",
+      "default": "bolt://127.0.0.1:7687",
+      "required": false
+    },
+    "hydra_token": {
+      "type": "string",
+      "title": "HydraDB token",
+      "description": "Token for your HydraDB node. The default is the local development token.",
+      "default": "local-development-token-32-bytes",
+      "sensitive": true,
+      "required": false
+    }
+  },
+  "compatibility": {
+    "platforms": ["darwin", "win32", "linux"],
+    "runtimes": { "node": ">=18.0.0" }
+  }
+}

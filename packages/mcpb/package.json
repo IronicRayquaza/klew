@@ -1,0 +1,7 @@
+{
+  "name": "klew-mcpb",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Claude Desktop extension for Klew (launches the klew Python package via uvx)",
+  "license": "MIT"
+}

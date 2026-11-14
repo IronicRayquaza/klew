@@ -11,6 +11,7 @@ jobs:
           chmod 644 .hydradb/auth-token && docker compose up -d
       - uses: astral-sh/setup-uv@v5
       - run: uv venv --python 3.12 && uv pip install -e ".[dev]"
+      - run: python3 scripts/check_versions.py
       - run: .venv/bin/ruff check klew tests
       - run: .venv/bin/python -m pytest -q
       - name: wait for HydraDB
