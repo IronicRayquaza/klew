@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { marked } from "marked";
+import { IconArrowLeft, IconArrowRight } from "../components/Icons";
 import overview from "../docs/overview.md?raw";
 import quickstart from "../docs/quickstart.md?raw";
 import mcp from "../docs/mcp.md?raw";
@@ -92,7 +93,7 @@ export function Docs({
         const text = pre.querySelector("code")?.textContent ?? "";
         navigator.clipboard.writeText(text).then(
           () => {
-            btn.textContent = "Copied ✓";
+            btn.textContent = "Copied";
             setTimeout(() => (btn.textContent = "Copy"), 1500);
           },
           () => {
@@ -205,7 +206,10 @@ export function Docs({
                 }}
                 className="surface-card btn-soft block p-5 no-underline"
               >
-                <div className="font-mono text-xs text-muted">← Previous</div>
+                <div className="inline-flex items-center gap-1.5 font-mono text-xs text-muted">
+                  <IconArrowLeft size={12} />
+                  <span>Previous</span>
+                </div>
                 <div className="mt-1 font-display text-lg font-semibold text-ink">
                   {ALL[idx - 1].title}
                 </div>
@@ -223,7 +227,10 @@ export function Docs({
                 }}
                 className="surface-card btn-soft block p-5 text-right no-underline"
               >
-                <div className="font-mono text-xs text-muted">Next →</div>
+                <div className="inline-flex items-center justify-end gap-1.5 font-mono text-xs text-muted">
+                  <span>Next</span>
+                  <IconArrowRight size={12} />
+                </div>
                 <div className="mt-1 font-display text-lg font-semibold text-ink">
                   {ALL[idx + 1].title}
                 </div>

@@ -8,6 +8,13 @@ import {
   type LearnReport,
   type Repo,
 } from "../api";
+import {
+  IconArrowLeft,
+  IconArrowRight,
+  IconCheck,
+  IconPlus,
+  IconX,
+} from "../components/Icons";
 import { PathGraph } from "../components/PathGraph";
 import { WhyPath } from "../components/WhyPath";
 
@@ -330,7 +337,7 @@ export function Dashboard() {
                 className="btn-soft flex h-7 w-7 items-center justify-center rounded-full border border-line bg-card text-xs text-ink hover:bg-paper"
                 title="Previous file in pack"
               >
-                ←
+                <IconArrowLeft size={13} />
               </button>
               <span className="num rounded-full border border-line bg-paper px-2.5 py-0.5 font-mono text-[11px] font-medium text-ink">
                 #{activeItemIdx >= 0 ? activeItemIdx + 1 : 1} of {pack.items.length}
@@ -341,7 +348,7 @@ export function Dashboard() {
                 className="btn-soft flex h-7 w-7 items-center justify-center rounded-full border border-line bg-card text-xs text-ink hover:bg-paper"
                 title="Next file in pack"
               >
-                →
+                <IconArrowRight size={13} />
               </button>
             </div>
 
@@ -359,7 +366,7 @@ export function Dashboard() {
                 className="btn-soft flex h-7 w-7 items-center justify-center rounded-full border border-line bg-card text-xs text-muted hover:text-ink"
                 title="Minimize inspector"
               >
-                ×
+                <IconX size={13} />
               </button>
             </div>
           </div>
@@ -387,13 +394,14 @@ export function Dashboard() {
             <button
               type="button"
               onClick={() => toggleTouch(activeItem.path)}
-              className={`btn-soft inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 font-mono text-xs font-medium ${
+              className={`btn-soft inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 font-mono text-xs font-medium ${
                 touched.has(activeItem.path)
                   ? "bg-ink text-paper"
                   : "border border-line bg-card text-ink hover:bg-paper"
               }`}
             >
-              <span>{touched.has(activeItem.path) ? "✓ Marked as changed" : "+ Mark as changed"}</span>
+              {touched.has(activeItem.path) ? <IconCheck size={12} /> : <IconPlus size={12} />}
+              <span>{touched.has(activeItem.path) ? "Marked as changed" : "Mark as changed"}</span>
             </button>
 
             {activeItem.snippet && (
@@ -447,7 +455,7 @@ export function Dashboard() {
                   onClick={() => setActiveModal(null)}
                   className="btn-soft flex h-8 w-8 items-center justify-center rounded-full border border-line bg-paper text-sm text-muted hover:text-ink"
                 >
-                  ×
+                  <IconX size={14} />
                 </button>
               </div>
 
@@ -483,13 +491,14 @@ export function Dashboard() {
                               e.stopPropagation();
                               toggleTouch(it.path);
                             }}
-                            className={`btn-soft rounded-full px-2.5 py-1 font-mono text-[10px] ${
+                            className={`btn-soft inline-flex items-center gap-1 rounded-full px-2.5 py-1 font-mono text-[10px] ${
                               isTouch
                                 ? "bg-ink font-medium text-paper"
                                 : "border border-line bg-card text-muted hover:text-ink"
                             }`}
                           >
-                            {isTouch ? "✓ Changed" : "+ Changed"}
+                            {isTouch ? <IconCheck size={10} /> : <IconPlus size={10} />}
+                            <span>Changed</span>
                           </button>
                         </div>
                       </div>
@@ -524,7 +533,7 @@ export function Dashboard() {
                   onClick={() => setActiveModal(null)}
                   className="btn-soft flex h-8 w-8 items-center justify-center rounded-full border border-line bg-paper text-sm text-muted hover:text-ink"
                 >
-                  ×
+                  <IconX size={14} />
                 </button>
               </div>
 
@@ -584,9 +593,10 @@ export function Dashboard() {
                   type="button"
                   onClick={teach}
                   disabled={(touched.size === 0 && !extra.trim()) || busy}
-                  className="btn-soft rounded-full bg-ink px-6 py-2.5 font-mono text-xs font-medium text-paper shadow-xs disabled:opacity-40"
+                  className="btn-soft inline-flex items-center gap-1.5 rounded-full bg-ink px-6 py-2.5 font-mono text-xs font-medium text-paper shadow-xs disabled:opacity-40"
                 >
-                  {busy ? "Updating…" : `Reinforce Thread (${touched.size}) →`}
+                  <span>{busy ? "Updating…" : `Reinforce Thread (${touched.size})`}</span>
+                  {!busy && <IconArrowRight size={13} />}
                 </button>
               </div>
             </div>
@@ -612,7 +622,7 @@ export function Dashboard() {
                   onClick={() => setActiveModal(null)}
                   className="btn-soft flex h-8 w-8 items-center justify-center rounded-full border border-line bg-paper text-sm text-muted hover:text-ink"
                 >
-                  ×
+                  <IconX size={14} />
                 </button>
               </div>
 
@@ -765,7 +775,7 @@ export function Dashboard() {
               className="btn-soft inline-flex items-center gap-2 rounded-xl bg-ink px-4 py-2 font-mono text-xs font-medium text-paper hover:opacity-90 disabled:opacity-40"
             >
               <span>{busy ? "Walking…" : "Unwind Context"}</span>
-              <span aria-hidden="true">→</span>
+              <IconArrowRight size={13} />
             </button>
           </div>
         </div>

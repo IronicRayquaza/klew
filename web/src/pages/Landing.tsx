@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Curve } from "../components/Curve";
+import { IconArrowRight, IconCheck, IconCopy } from "../components/Icons";
 import { LabyrinthHero } from "../components/LabyrinthHero";
 import { useEvalResults } from "../useEval";
 
@@ -11,29 +12,38 @@ interface Props {
 
 const MYTH_CARDS = [
   {
-    eyebrow: "01 · The Labyrinth",
+    index: "01",
+    eyebrow: "The Labyrinth",
+    mythFrom: "Myth: The Maze",
+    klewTo: "Klew: Codebase Graph",
     title: "A large codebase where word overlap gets lost",
     body: "In real repositories, the file you need to edit rarely shares words with the issue title. Vector search retrieves isolated chunks by cosine similarity and gets trapped at the entry doorway when the real fix lives two hops away.",
-    diagram: "labyrinth",
+    image: "/card1.webp",
   },
   {
-    eyebrow: "02 · Ariadne's Clew (/kluː/)",
+    index: "02",
+    eyebrow: "Ariadne's Clew (/kluː/)",
+    mythFrom: "Myth: The Thread",
+    klewTo: "Klew: Why-Path Walk",
     title: "The thread that unwinds into an auditable clue",
     body: "Ariadne gave Theseus a clew of thread to trace his way through the maze - the direct root of the word 'clue'. Klew walks calls, imports, and tests in HydraDB, returning a token-budgeted pack with a why-path for every file.",
-    diagram: "clew",
+    image: "/card2.webp",
   },
   {
-    eyebrow: "03 · The Desire Path",
+    index: "03",
+    eyebrow: "The Desire Path",
+    mythFrom: "Myth: Worn Trail",
+    klewTo: "Klew: Continual Learning",
     title: "Paths that grow stronger with every merged PR",
     body: "After an agent run or merged PR, record_outcome reinforces the paths that led to the files that actually changed and gently decays served misses. Structural facts stay untouched, so re-indexing never erases experience.",
-    diagram: "desire",
+    image: "/card3.webp",
   },
 ] as const;
 
 export function Landing({ onTry, onResults, onDocs }: Props) {
   const { results } = useEvalResults();
   const [selectedRepoKey, setSelectedRepoKey] = useState<"httpx" | "flask" | "ods">("httpx");
-  const [installTab, setInstallTab] = useState<"cli" | "mcp">("cli");
+  const [installTab, setInstallTab] = useState<"cli" | "mcp" | "action">("cli");
   const [copied, setCopied] = useState(false);
 
   // Direct DOM refs for 60fps zero-glitch scroll expansion + mouse parallax
@@ -133,9 +143,21 @@ klew context "Raise ReadTimeout when stream times out"`;
 
   const mcpSnippet = `{
   "mcpServers": {
-    "klew": { "command": "npx", "args": ["-y", "klew", "mcp"] }
+    "klew": {
+      "command": "npx",
+      "args": ["-y", "klew", "mcp"]
+    }
   }
 }`;
+
+  const actionSnippet = `- name: Teach Klew on PR merge
+  uses: IronicRayquaza/klew/action@main
+  with:
+    hydra_uri: \${{ secrets.HYDRA_URI }}
+    repo: httpx`;
+
+  const activeSnippet =
+    installTab === "cli" ? cliSnippet : installTab === "mcp" ? mcpSnippet : actionSnippet;
 
   return (
     <div className="w-full">
@@ -213,7 +235,7 @@ klew context "Raise ReadTimeout when stream times out"`;
                     className="btn-soft inline-flex items-center gap-2.5 rounded-full bg-ink px-7 py-3.5 text-sm font-medium text-paper shadow-sm hover:bg-trail"
                   >
                     <span>Explore the Playground</span>
-                    <span aria-hidden="true">→</span>
+                    <IconArrowRight size={15} />
                   </button>
                   <button
                     type="button"
@@ -242,36 +264,62 @@ klew context "Raise ReadTimeout when stream times out"`;
       </section>
 
       {/* =====================================================================
-          THE MYTH & ARCHITECTURE - THREE BREATHABLE STORY CARDS
+          THE MYTH & ARCHITECTURE - EDITORIAL 3-CARD TRIPTYCH (4:3 ILLUSTRATIONS)
          ===================================================================== */}
       <section className="px-frame py-20 sm:py-28">
-        <div className="max-w-2xl">
-          <span className="font-mono text-xs uppercase tracking-widest text-muted">
-            Why the name is Klew
-          </span>
-          <h2 className="mt-3 font-display text-3xl font-semibold tracking-tight text-ink sm:text-4xl">
-            Both the thread through the maze and the clue to the answer.
-          </h2>
+        <div className="flex flex-col justify-between gap-6 lg:flex-row lg:items-end">
+          <div className="max-w-2xl">
+            <span className="font-mono text-xs uppercase tracking-widest text-muted">
+              Why the name is Klew
+            </span>
+            <h2 className="mt-3 font-display text-3xl font-semibold tracking-tight text-ink sm:text-4xl">
+              Both the thread through the maze and the clue to the answer.
+            </h2>
+          </div>
+
+          <p className="max-w-md text-sm leading-relaxed text-muted">
+            Pronounced <span className="font-mono text-ink">/kluː/</span>. In Greek myth, Ariadne
+            gave Theseus a <span className="font-medium text-ink">clew</span> of thread to navigate
+            the Labyrinth - the direct origin of the word{" "}
+            <span className="font-medium text-ink">clue</span>.
+          </p>
         </div>
 
-        <div className="mt-12 grid grid-cols-1 gap-7 lg:grid-cols-3">
+        <div className="mt-12 grid grid-cols-1 gap-8 lg:grid-cols-3">
           {MYTH_CARDS.map((card) => (
-            <div
-              key={card.eyebrow}
-              className="surface-card flex flex-col justify-between p-8 sm:p-10"
+            <article
+              key={card.index}
+              className="group surface-card flex flex-col overflow-hidden p-3.5 transition-all duration-500 hover:-translate-y-1 sm:p-4"
             >
-              <div>
-                <div className="font-mono text-xs text-muted">{card.eyebrow}</div>
-                <h3 className="mt-3 font-display text-xl font-semibold leading-snug text-ink">
-                  {card.title}
-                </h3>
-                <p className="mt-3 text-sm leading-relaxed text-muted">{card.body}</p>
+              {/* 4:3 Illustration Container */}
+              <div className="relative aspect-[4/3] w-full overflow-hidden rounded-[22px] bg-paper">
+                <img
+                  src={card.image}
+                  alt={card.eyebrow}
+                  className="h-full w-full object-cover object-center transition-transform duration-700 ease-out group-hover:scale-[1.03]"
+                />
               </div>
 
-              <div className="mt-8 flex h-36 items-center justify-center rounded-2xl bg-paper p-4">
-                <MinimalMythGraphic kind={card.diagram} />
+              {/* Editorial Card Body */}
+              <div className="flex flex-1 flex-col justify-between px-3 pt-6 pb-3 sm:px-4">
+                <div>
+                  <div className="flex flex-wrap items-center justify-between gap-2 font-mono text-[11px] text-muted">
+                    <span className="font-medium text-ink">
+                      {card.index} · {card.eyebrow}
+                    </span>
+                    <span className="inline-flex items-center gap-1.5">
+                      <span>{card.mythFrom}</span>
+                      <IconArrowRight size={11} />
+                      <span>{card.klewTo}</span>
+                    </span>
+                  </div>
+                  <h3 className="mt-3 font-display text-xl font-semibold leading-snug tracking-tight text-ink sm:text-[22px]">
+                    {card.title}
+                  </h3>
+                  <p className="mt-3 text-sm leading-relaxed text-muted">{card.body}</p>
+                </div>
               </div>
-            </div>
+            </article>
           ))}
         </div>
       </section>
@@ -341,7 +389,7 @@ klew context "Raise ReadTimeout when stream times out"`;
               Token Efficiency
             </div>
             <div className="num mt-4 font-display text-5xl font-semibold tracking-tight text-ink sm:text-6xl">
-              {tokRatio}×
+              {tokRatio}x
             </div>
             <div className="num mt-2 font-mono text-xs font-medium text-ink">
               {s?.graph_learn?.tokens_per_hit?.toLocaleString() ?? "2,175"} vs{" "}
@@ -360,8 +408,10 @@ klew context "Raise ReadTimeout when stream times out"`;
             <div className="num mt-4 font-display text-5xl font-semibold tracking-tight text-ink sm:text-6xl">
               +{learnLift} pts
             </div>
-            <div className="num mt-2 font-mono text-xs font-medium text-ink">
-              Same graph, learning off → learning on
+            <div className="num mt-2 inline-flex items-center gap-1.5 font-mono text-xs font-medium text-ink">
+              <span>Same graph, learning off</span>
+              <IconArrowRight size={12} />
+              <span>learning on</span>
             </div>
             <p className="mt-3 text-sm leading-relaxed text-muted">
               Every merged PR strengthens links between issue vocabulary and the symbols that
@@ -386,9 +436,10 @@ klew context "Raise ReadTimeout when stream times out"`;
               <button
                 type="button"
                 onClick={onResults}
-                className="btn-soft rounded-full border border-line bg-paper px-4 py-2 font-mono text-xs font-medium text-ink hover:border-ink/40"
+                className="btn-soft inline-flex items-center gap-2 rounded-full border border-line bg-paper px-4 py-2 font-mono text-xs font-medium text-ink hover:border-ink/40"
               >
-                Explore full Evidence &amp; ablations →
+                <span>Explore full Evidence &amp; ablations</span>
+                <IconArrowRight size={13} />
               </button>
             </div>
 
@@ -398,103 +449,134 @@ klew context "Raise ReadTimeout when stream times out"`;
       </section>
 
       {/* =====================================================================
-          START IN 60 SECONDS - MINIMAL TABBED QUICKSTART
+          START IN 60 SECONDS - SPLIT EDITORIAL PIPELINE & TERMINAL WINDOW
          ===================================================================== */}
       <section className="px-frame pt-12 pb-20">
-        <div className="surface-card mx-auto max-w-4xl p-8 sm:p-12">
-          <div className="flex flex-wrap items-center justify-between gap-4">
-            <div>
-              <span className="font-mono text-xs uppercase tracking-widest text-trail">
+        <div className="surface-card overflow-hidden p-8 sm:p-12 lg:p-14">
+          <div className="grid grid-cols-1 items-start gap-10 lg:grid-cols-12 lg:gap-12">
+            {/* Left Column: Editorial Heading + 3-Step Workflow */}
+            <div className="lg:col-span-5">
+              <span className="font-mono text-xs uppercase tracking-widest text-muted">
                 60-Second Setup
               </span>
-              <h2 className="mt-2 font-display text-2xl font-semibold text-ink sm:text-3xl">
+              <h2 className="mt-2.5 font-display text-2xl font-semibold tracking-tight text-ink sm:text-3xl">
                 Connect Klew to your agent or terminal.
               </h2>
+              <p className="mt-3 text-sm leading-relaxed text-muted">
+                Self-hosted on open-source HydraDB. Index a 60-file repository in under a second
+                and serve deterministic why-paths over MCP or CLI.
+              </p>
+
+              {/* 3-Step Pipeline Pills */}
+              <div className="mt-7 space-y-3">
+                {[
+                  {
+                    step: "01",
+                    title: "Start local HydraDB & index repo",
+                    meta: "klew hydra up && klew index .",
+                  },
+                  {
+                    step: "02",
+                    title: "Unwind token-budgeted context pack",
+                    meta: "get_context(task, budget=2000)",
+                  },
+                  {
+                    step: "03",
+                    title: "Reinforce paths when PR merges",
+                    meta: "record_outcome(run_id, touched_files)",
+                  },
+                ].map((item) => (
+                  <div
+                    key={item.step}
+                    className="flex items-start gap-3.5 rounded-2xl border border-line/80 bg-paper/65 px-4 py-3"
+                  >
+                    <span className="num mt-0.5 rounded-full bg-card px-2.5 py-0.5 font-mono text-[11px] font-semibold text-ink shadow-2xs">
+                      {item.step}
+                    </span>
+                    <div className="min-w-0">
+                      <div className="text-xs font-semibold text-ink sm:text-sm">{item.title}</div>
+                      <div className="mt-0.5 truncate font-mono text-[11px] text-muted">
+                        {item.meta}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
 
-            <div className="flex rounded-full bg-paper p-1 text-xs font-medium">
-              <button
-                type="button"
-                onClick={() => setInstallTab("cli")}
-                className={`btn-soft rounded-full px-4 py-1.5 ${
-                  installTab === "cli" ? "bg-card text-ink shadow-xs" : "text-muted hover:text-ink"
-                }`}
-              >
-                Terminal CLI
-              </button>
-              <button
-                type="button"
-                onClick={() => setInstallTab("mcp")}
-                className={`btn-soft rounded-full px-4 py-1.5 ${
-                  installTab === "mcp" ? "bg-card text-ink shadow-xs" : "text-muted hover:text-ink"
-                }`}
-              >
-                Claude / Cursor MCP
-              </button>
-            </div>
-          </div>
+            {/* Right Column: Tactile Window Frame with Mode Switcher & Code Surface */}
+            <div className="lg:col-span-7">
+              <div className="rounded-3xl border border-line bg-paper p-2.5 sm:p-3">
+                {/* Window Chrome Header */}
+                <div className="flex flex-wrap items-center justify-between gap-2 px-2 pb-2.5">
+                  <div className="flex flex-wrap items-center gap-1 rounded-full bg-card/80 p-1 text-xs font-medium shadow-2xs">
+                    {(
+                      [
+                        ["cli", "Terminal CLI"],
+                        ["mcp", "Claude / Cursor MCP"],
+                        ["action", "GitHub Action"],
+                      ] as const
+                    ).map(([k, label]) => (
+                      <button
+                        key={k}
+                        type="button"
+                        onClick={() => setInstallTab(k)}
+                        className={`btn-soft rounded-full px-3.5 py-1.5 text-xs ${
+                          installTab === k
+                            ? "bg-ink text-paper shadow-2xs"
+                            : "text-muted hover:text-ink"
+                        }`}
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </div>
 
-          <div className="relative mt-6 overflow-hidden rounded-2xl border border-line bg-paper p-5 sm:p-6">
-            <button
-              type="button"
-              onClick={() => copyInstall(installTab === "cli" ? cliSnippet : mcpSnippet)}
-              className="btn-soft absolute top-4 right-4 rounded-full border border-line bg-card px-3.5 py-1 font-mono text-xs text-ink shadow-2xs hover:border-trail"
-            >
-              {copied ? "Copied ✓" : "Copy"}
-            </button>
-            <pre className="overflow-x-auto pr-20 font-mono text-xs leading-relaxed text-ink sm:text-sm">
-              {installTab === "cli" ? cliSnippet : mcpSnippet}
-            </pre>
+                  <button
+                    type="button"
+                    onClick={() => copyInstall(activeSnippet)}
+                    className="btn-soft inline-flex items-center gap-1.5 rounded-full border border-line bg-card px-4 py-1.5 font-mono text-xs font-medium text-ink shadow-2xs hover:bg-paper"
+                  >
+                    {copied ? <IconCheck size={13} /> : <IconCopy size={13} />}
+                    <span>{copied ? "Copied" : "Copy snippet"}</span>
+                  </button>
+                </div>
+
+                {/* Inner Code Card */}
+                <div className="overflow-hidden rounded-2xl border border-line/80 bg-card p-5 sm:p-7">
+                  <div className="mb-3 flex items-center justify-between border-b border-line/60 pb-2.5 font-mono text-[11px] text-muted">
+                    <span>
+                      {installTab === "cli"
+                        ? "shell · quickstart"
+                        : installTab === "mcp"
+                          ? "claude_desktop_config.json"
+                          : ".github/workflows/klew-learn.yml"}
+                    </span>
+                    <span>Python 3.11+ · Docker</span>
+                  </div>
+
+                  <pre className="overflow-x-auto font-mono text-xs leading-[1.85] text-ink sm:text-[13px]">
+                    {activeSnippet}
+                  </pre>
+
+                  {/* Bottom Telemetry Footer inside Code Card */}
+                  <div className="mt-5 flex flex-wrap items-center justify-between gap-2 rounded-xl bg-paper/75 px-3.5 py-2 font-mono text-[11px] text-muted">
+                    <span>bolt://127.0.0.1:7687 · ~0.9s index (60 files)</span>
+                    <button
+                      type="button"
+                      onClick={() => onDocs("quickstart")}
+                      className="inline-flex items-center gap-1.5 font-medium text-ink hover:underline"
+                    >
+                      <span>Full setup guide</span>
+                      <IconArrowRight size={12} />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </section>
     </div>
-  );
-}
-
-function MinimalMythGraphic({ kind }: { kind: "labyrinth" | "clew" | "desire" }) {
-  if (kind === "labyrinth") {
-    return (
-      <svg viewBox="0 0 280 100" className="h-full w-full" fill="none" aria-hidden="true">
-        <circle cx="70" cy="50" r="34" stroke="var(--guide)" strokeWidth="1.4" strokeDasharray="4 4" />
-        <circle cx="70" cy="50" r="5" fill="var(--muted)" />
-        <path
-          d="M 145 75 C 175 75, 180 25, 210 25 C 235 25, 240 60, 260 40"
-          stroke="var(--trail)"
-          strokeWidth="2.5"
-          strokeLinecap="round"
-        />
-        <circle cx="145" cy="75" r="5" fill="var(--trail)" />
-        <circle cx="210" cy="25" r="4.5" fill="#fff" stroke="var(--trail)" strokeWidth="2" />
-        <circle cx="260" cy="40" r="6" fill="var(--moss)" />
-      </svg>
-    );
-  }
-  if (kind === "clew") {
-    return (
-      <svg viewBox="0 0 280 100" className="h-full w-full" fill="none" aria-hidden="true">
-        <circle cx="52" cy="50" r="22" stroke="var(--trail)" strokeWidth="1.3" strokeDasharray="3 3" />
-        <circle cx="52" cy="50" r="13" stroke="var(--trail)" strokeWidth="1.6" />
-        <circle cx="52" cy="50" r="5" fill="var(--trail)" />
-        <path
-          d="M 74 50 C 115 50, 125 28, 165 28 C 205 28, 210 68, 245 50"
-          stroke="var(--trail)"
-          strokeWidth="2.5"
-          strokeLinecap="round"
-        />
-        <circle cx="165" cy="28" r="5" fill="#fff" stroke="var(--ink)" strokeWidth="2" />
-        <circle cx="245" cy="50" r="6.5" fill="var(--moss)" />
-      </svg>
-    );
-  }
-  return (
-    <svg viewBox="0 0 280 100" className="h-full w-full" fill="none" aria-hidden="true">
-      <line x1="30" y1="28" x2="250" y2="28" stroke="var(--trail)" strokeWidth="1.5" strokeDasharray="3 5" opacity="0.55" />
-      <line x1="30" y1="52" x2="250" y2="52" stroke="var(--trail)" strokeWidth="2.2" />
-      <line x1="30" y1="76" x2="250" y2="76" stroke="var(--moss)" strokeWidth="7" strokeLinecap="round" opacity="0.18" />
-      <line x1="30" y1="76" x2="250" y2="76" stroke="var(--moss)" strokeWidth="3.2" strokeLinecap="round" />
-      <circle cx="30" cy="76" r="5" fill="var(--trail)" />
-      <circle cx="250" cy="76" r="6" fill="var(--moss)" />
-    </svg>
   );
 }

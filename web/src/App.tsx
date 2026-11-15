@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { IconArrowLeft, IconArrowRight, IconCheck, IconCopy } from "./components/Icons";
 import { Wordmark } from "./components/Logo";
 import { Dashboard } from "./pages/Dashboard";
 import { Docs } from "./pages/Docs";
@@ -129,7 +130,7 @@ export default function App() {
                 className="btn-soft inline-flex items-center gap-2 rounded-full bg-ink px-4 py-2 text-xs font-medium text-paper shadow-xs hover:opacity-90 sm:px-5"
               >
                 <span>Open Playground</span>
-                <span aria-hidden="true">→</span>
+                <IconArrowRight size={14} />
               </button>
             ) : (
               <button
@@ -137,7 +138,7 @@ export default function App() {
                 onClick={() => go("landing")}
                 className="btn-soft inline-flex items-center gap-2 rounded-full border border-line bg-card px-4 py-1.5 font-mono text-xs font-medium text-ink hover:bg-paper"
               >
-                <span aria-hidden="true">←</span>
+                <IconArrowLeft size={14} />
                 <span>Overview</span>
               </button>
             )}
@@ -212,8 +213,9 @@ export default function App() {
                   title="Copy install command"
                 >
                   <span>$ pip install klew &amp;&amp; klew hydra up</span>
-                  <span className="rounded-full bg-card px-2.5 py-0.5 text-[10px] font-medium text-muted">
-                    {copiedFooterCmd ? "Copied" : "Copy"}
+                  <span className="inline-flex items-center gap-1 rounded-full bg-card px-2.5 py-0.5 text-[10px] font-medium text-muted">
+                    {copiedFooterCmd ? <IconCheck size={11} /> : <IconCopy size={11} />}
+                    <span>{copiedFooterCmd ? "Copied" : "Copy"}</span>
                   </span>
                 </button>
                 <button
@@ -222,7 +224,7 @@ export default function App() {
                   className="btn-soft inline-flex items-center gap-2 rounded-full bg-ink px-5 py-2.5 text-xs font-medium text-paper hover:opacity-90"
                 >
                   <span>Open Playground</span>
-                  <span aria-hidden="true">→</span>
+                  <IconArrowRight size={14} />
                 </button>
               </div>
             </div>
