@@ -8,6 +8,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import { tooltipProps, useElementWidth } from "./chartTooltip";
 
 export type LearningPoint = {
   learned: number;
@@ -45,6 +46,7 @@ export function LearningCurve({
   data: LearningCurveData;
   height?: number;
 }) {
+  const [chartRef, chartW] = useElementWidth<HTMLDivElement>();
   const base = data.points.find((p) => !p.learning);
   const pts = data.points;
 
@@ -74,7 +76,7 @@ export function LearningCurve({
         ))}
       </div>
 
-      <div style={{ width: "100%", height }}>
+      <div ref={chartRef} style={{ width: "100%", height }}>
         <ResponsiveContainer>
           <LineChart data={pts} margin={{ top: 12, right: 20, bottom: 10, left: -4 }}>
             <CartesianGrid stroke="var(--line)" strokeDasharray="3 5" vertical={false} />
@@ -104,16 +106,7 @@ export function LearningCurve({
               width={48}
             />
             <Tooltip
-              contentStyle={{
-                background: "rgba(255, 255, 255, 0.96)",
-                border: "1px solid var(--line)",
-                borderRadius: "16px",
-                boxShadow: "0 12px 32px rgba(23, 42, 56, 0.08)",
-                color: "var(--ink)",
-                fontFamily: "JetBrains Mono",
-                fontSize: 12,
-                padding: "10px 14px",
-              }}
+              {...tooltipProps(300, chartW)}
               formatter={(v: number, k: string) => [
                 `${(v * 100).toFixed(1)}%`,
                 SERIES.find((s) => s.key === k)?.label ?? k,

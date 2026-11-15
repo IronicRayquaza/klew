@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { IconArrowLeft, IconArrowRight, IconCheck, IconCopy } from "./components/Icons";
-import { Wordmark } from "./components/Logo";
+import { LogoWithName, Wordmark } from "./components/Logo";
 import { Dashboard } from "./pages/Dashboard";
 import { Docs } from "./pages/Docs";
 import { Landing } from "./pages/Landing";
@@ -50,9 +50,9 @@ export default function App() {
   const tab = route.tab;
   const isPlayground = tab === "app";
   const isLanding = tab === "landing";
-  const heroHeightThreshold =
-    typeof window !== "undefined" ? Math.round(window.innerHeight * 1.55) : 1350;
-  const navBlurred = isLanding ? scrollY > heroHeightThreshold : scrollY > 40;
+  // Landing: stay clear while the hero image expands (the first 180px, Landing's EXPAND_DISTANCE), then blur
+  // as soon as the hero text and the graph card start scrolling under the bar.
+  const navBlurred = isLanding ? scrollY > 170 : scrollY > 40;
 
   const copyInstallCmd = () => {
     navigator.clipboard?.writeText("pip install klew && klew hydra up");
@@ -127,7 +127,7 @@ export default function App() {
               <button
                 type="button"
                 onClick={() => go("app")}
-                className="btn-soft inline-flex items-center gap-2 rounded-full bg-ink px-4 py-2 text-xs font-medium text-paper shadow-xs hover:opacity-90 sm:px-5"
+                className="btn-soft hidden items-center gap-2 rounded-full bg-ink px-4 py-2 text-xs font-medium text-paper shadow-xs hover:opacity-90 sm:inline-flex sm:px-5"
               >
                 <span>Open Playground</span>
                 <IconArrowRight size={14} />
@@ -232,7 +232,7 @@ export default function App() {
             {/* Middle Directory Columns */}
             <div className="grid grid-cols-1 gap-10 py-10 lg:grid-cols-12">
               <div className="lg:col-span-5">
-                <Wordmark size="md" showPronunciation />
+                <LogoWithName height={104} />
                 <p className="mt-4 max-w-sm text-sm leading-relaxed text-muted">
                   From Middle English <span className="font-medium text-ink">clew</span> - the ball of thread
                   Ariadne gave Theseus to navigate the Labyrinth, and the origin of the word{" "}

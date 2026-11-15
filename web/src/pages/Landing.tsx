@@ -46,66 +46,95 @@ export function Landing({ onTry, onResults, onDocs }: Props) {
   const [installTab, setInstallTab] = useState<"cli" | "mcp" | "action">("cli");
   const [copied, setCopied] = useState(false);
 
-  // Direct DOM refs for 60fps zero-glitch scroll expansion + mouse parallax
+  // Hero background: one requestAnimationFrame loop eases scroll expansion and mouse parallax toward their
+  // targets and writes only compositor-friendly properties (clip-path, transform). No layout per scroll event,
+  // no CSS transition fighting the updates, and the loop stops once everything has settled.
   const imgFrameRef = useRef<HTMLDivElement>(null);
   const imgElRef = useRef<HTMLImageElement>(null);
-  const mouseRef = useRef({ x: 0, y: 0 });
-  const scrollRef = useRef(0);
+  const mistRef = useRef<HTMLDivElement>(null);
+  const target = useRef({ expand: 0, parallax: 0, mx: 0, my: 0 });
+  const kickRef = useRef<() => void>(() => {});
 
   useEffect(() => {
-    const EXPAND_DISTANCE = 180; // First 180px of scroll purely expands the image while H1 stays sticky at top:0
+    const EXPAND_DISTANCE = 180; // first 180px of scroll expands the image while the hero text stays put
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const cur = { expand: 0, parallax: 0, mx: 0, my: 0 };
+    let raf = 0;
 
-    const applyTransforms = () => {
-      const y = window.scrollY || window.pageYOffset || 0;
-      scrollRef.current = y;
+    const readScroll = () => {
+      const y = window.scrollY || 0;
+      target.current.expand = Math.min(1, Math.max(0, y / EXPAND_DISTANCE));
+      target.current.parallax = Math.min(48, Math.max(0, y - EXPAND_DISTANCE) * 0.08);
+    };
 
-      const expandP = Math.min(1, Math.max(0, y / EXPAND_DISTANCE));
-      // After image is 100% expanded (y > 180), apply gentle vertical parallax as the page scrolls
-      const parallaxY = Math.max(0, y - EXPAND_DISTANCE) * 0.08;
-
+    const paint = () => {
+      const vw = window.innerWidth / 100;
+      const vh = window.innerHeight / 100;
+      const open = 1 - cur.expand;
+      const t = open * 1.2 * vh;
+      const x = open * 5 * vw;
+      const b = open * 6.5 * vh;
+      const r = open * 32;
       if (imgFrameRef.current) {
-        const padX = (1 - expandP) * 5; // 5vw -> 0vw (90% width -> 100% width)
-        const padTop = (1 - expandP) * 1.2; // minimal top inset so navbar sits over the image
-        const padBottom = (1 - expandP) * 6.5; // breathing bottom frame -> 0vh
-        const radius = Math.round(32 * (1 - expandP));
-        imgFrameRef.current.style.inset = `${padTop}vh ${padX}vw ${padBottom}vh ${padX}vw`;
-        imgFrameRef.current.style.borderRadius = `${radius}px`;
+        imgFrameRef.current.style.clipPath = `inset(${t.toFixed(2)}px ${x.toFixed(2)}px ${b.toFixed(2)}px ${x.toFixed(2)}px round ${r.toFixed(2)}px)`;
       }
-
+      if (mistRef.current) mistRef.current.style.transform = `translate3d(0, ${(-b).toFixed(2)}px, 0)`;
       if (imgElRef.current) {
-        const mx = mouseRef.current.x * -20;
-        const my = mouseRef.current.y * -12 - Math.min(48, parallaxY);
-        imgElRef.current.style.transform = `translate3d(${mx}px, ${my}px, 0) scale(1.08)`;
+        const mx = cur.mx * -20;
+        const my = cur.my * -12 - cur.parallax;
+        imgElRef.current.style.transform = `translate3d(${mx.toFixed(2)}px, ${my.toFixed(2)}px, 0) scale(1.08)`;
       }
     };
 
-    applyTransforms();
-    window.addEventListener("scroll", applyTransforms, { passive: true });
-    return () => window.removeEventListener("scroll", applyTransforms);
+    const tick = () => {
+      const k = reduce ? 1 : 0.14; // easing per frame; 1 = snap (reduced motion)
+      let moving = false;
+      for (const key of ["expand", "parallax", "mx", "my"] as const) {
+        const d = target.current[key] - cur[key];
+        if (Math.abs(d) > 0.0005) {
+          cur[key] += d * k;
+          moving = true;
+        } else {
+          cur[key] = target.current[key];
+        }
+      }
+      paint();
+      raf = moving ? requestAnimationFrame(tick) : 0;
+    };
+
+    const kick = () => {
+      if (!raf) raf = requestAnimationFrame(tick);
+    };
+    kickRef.current = reduce ? () => {} : kick;
+
+    const onScroll = () => {
+      readScroll();
+      kick();
+    };
+    readScroll();
+    Object.assign(cur, target.current);
+    paint();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onScroll);
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onScroll);
+      cancelAnimationFrame(raf);
+    };
   }, []);
 
   const handleHeroMouseMove = (e: React.MouseEvent<HTMLElement>) => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    const nx = ((e.clientX - rect.left) / Math.max(1, rect.width) - 0.5) * 2;
-    const ny = ((e.clientY - rect.top) / Math.max(1, rect.height) - 0.5) * 2;
-    mouseRef.current = {
-      x: Math.max(-1, Math.min(1, nx)),
-      y: Math.max(-1, Math.min(1, ny)),
-    };
-    if (imgElRef.current) {
-      const parallaxY = Math.max(0, scrollRef.current - 180) * 0.08;
-      const mx = mouseRef.current.x * -20;
-      const my = mouseRef.current.y * -12 - Math.min(48, parallaxY);
-      imgElRef.current.style.transform = `translate3d(${mx}px, ${my}px, 0) scale(1.08)`;
-    }
+    const nx = (e.clientX / Math.max(1, window.innerWidth) - 0.5) * 2;
+    const ny = (e.clientY / Math.max(1, window.innerHeight) - 0.5) * 2;
+    target.current.mx = Math.max(-1, Math.min(1, nx));
+    target.current.my = Math.max(-1, Math.min(1, ny));
+    kickRef.current();
   };
 
   const handleHeroMouseLeave = () => {
-    mouseRef.current = { x: 0, y: 0 };
-    if (imgElRef.current) {
-      const parallaxY = Math.max(0, scrollRef.current - 180) * 0.08;
-      imgElRef.current.style.transform = `translate3d(0px, ${-Math.min(48, parallaxY)}px, 0) scale(1.08)`;
-    }
+    target.current.mx = 0;
+    target.current.my = 0;
+    kickRef.current();
   };
 
   const activeEval =
@@ -175,11 +204,8 @@ klew context "Raise ReadTimeout when stream times out"`;
         <div className="pointer-events-none sticky top-0 z-0 h-screen w-full overflow-hidden">
           <div
             ref={imgFrameRef}
-            style={{
-              inset: "1.2vh 5vw 6.5vh 5vw",
-              borderRadius: "32px",
-            }}
-            className="absolute overflow-hidden will-change-[inset,border-radius]"
+            style={{ clipPath: "inset(1.2vh 5vw 6.5vh 5vw round 32px)" }}
+            className="absolute inset-0 overflow-hidden"
           >
             {/* Background Image with Mouse Hover Movement + Scroll Parallax */}
             <img
@@ -187,10 +213,7 @@ klew context "Raise ReadTimeout when stream times out"`;
               src="/heroBg.webp"
               alt=""
               aria-hidden="true"
-              style={{
-                transform: "translate3d(0px, 0px, 0) scale(1.08)",
-                transition: "transform 160ms cubic-bezier(0.22, 1, 0.36, 1)",
-              }}
+              style={{ transform: "translate3d(0px, 0px, 0) scale(1.08)" }}
               className="h-full w-full object-cover object-center select-none will-change-transform"
             />
 
@@ -204,7 +227,10 @@ klew context "Raise ReadTimeout when stream times out"`;
             />
 
             {/* Bottom Mist Blend into Page Background */}
-            <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-paper via-paper/55 to-transparent" />
+            <div
+              ref={mistRef}
+              className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-paper via-paper/55 to-transparent will-change-transform"
+            />
           </div>
         </div>
 

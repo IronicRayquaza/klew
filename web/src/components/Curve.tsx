@@ -9,6 +9,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import { tooltipProps, useElementWidth } from "./chartTooltip";
 import { ARM_COLOR, ARM_DASH, ARM_LABEL, type EvalResult } from "../api";
 
 export type CurveMetric = "budget_recall" | "recall@5";
@@ -30,6 +31,7 @@ export function Curve({
     (a) => result.curves?.[a]?.[metric]?.length,
   );
   const [hidden, setHidden] = useState<Set<string>>(new Set());
+  const [chartRef, chartW] = useElementWidth<HTMLDivElement>();
 
   const toggleArm = (arm: string) => {
     setHidden((prev) => {
@@ -89,7 +91,7 @@ export function Curve({
         })}
       </div>
 
-      <div style={{ width: "100%", height }} className="rounded-2xl bg-paper/45 p-3 sm:p-5">
+      <div ref={chartRef} style={{ width: "100%", height }} className="rounded-2xl bg-paper/45 p-3 sm:p-5">
         <ResponsiveContainer>
           <LineChart data={data} margin={{ top: 18, right: 24, bottom: 28, left: 4 }}>
             <CartesianGrid stroke="var(--line)" strokeDasharray="3 5" vertical={false} />
@@ -121,16 +123,7 @@ export function Curve({
               width={52}
             />
             <Tooltip
-              contentStyle={{
-                background: "rgba(255, 255, 255, 0.97)",
-                border: "1px solid var(--line)",
-                borderRadius: "16px",
-                boxShadow: "0 12px 32px rgba(23, 42, 56, 0.08)",
-                color: "var(--ink)",
-                fontFamily: "JetBrains Mono",
-                fontSize: 12,
-                padding: "12px 16px",
-              }}
+              {...tooltipProps(300, chartW)}
               formatter={(v: number, k: string) => [
                 `${(v * 100).toFixed(1)}%`,
                 ARM_LABEL[k] ?? k,

@@ -33,26 +33,10 @@ def numbers(repo: str) -> dict:
 
 
 def klew_logo_svg(dark: bool) -> str:
-    tile_bg = "#15212a" if dark else "#18303f"
-    tile_border = "#263642" if dark else "#2b485a"
-    trail = "#e0a23b"
-    moss = "#6fc29a"
-    return f'''<svg width="42" height="42" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <rect x="1" y="1" width="30" height="30" rx="7" fill="{tile_bg}" stroke="{tile_border}" stroke-width="1"/>
-  <g fill="#8fa3ae" opacity="0.42">
-    <circle cx="16" cy="7.5" r="1.2"/><circle cx="16" cy="16" r="1.2"/><circle cx="23.5" cy="16" r="1.2"/><circle cx="16" cy="24.5" r="1.2"/>
-  </g>
-  <circle cx="8.5" cy="11.5" r="0.8" fill="{trail}" opacity="0.72"/>
-  <circle cx="8.5" cy="13.4" r="0.85" fill="{trail}" opacity="0.95"/>
-  <path d="M 8.5 16 L 8.5 24.5" stroke="{trail}" stroke-width="2.15" stroke-linecap="round"/>
-  <path d="M 23.5 7.5 L 8.5 16 L 23.5 24.5" stroke="{trail}" stroke-width="2.15" stroke-linecap="round" stroke-linejoin="round"/>
-  <circle cx="8.5" cy="7.5" r="2.25" fill="{tile_bg}" stroke="{trail}" stroke-width="1.25"/>
-  <circle cx="8.5" cy="7.5" r="0.95" fill="{trail}"/>
-  <circle cx="8.5" cy="16" r="1.85" fill="{tile_bg}" stroke="{trail}" stroke-width="1.5"/>
-  <circle cx="8.5" cy="24.5" r="1.85" fill="{trail}"/>
-  <circle cx="23.5" cy="7.5" r="1.85" fill="{trail}"/>
-  <circle cx="23.5" cy="24.5" r="2.35" fill="{moss}"/>
-</svg>'''
+    """The Klew mark from web/public/brand/logo.svg, recoloured for the dark card."""
+    svg = (Path(__file__).resolve().parent.parent / "web/public/brand/logo.svg").read_text()
+    svg = svg.replace('width="1256" height="1060"', 'width="54" height="46"', 1)
+    return svg.replace("#172A38", "#e8eef1") if dark else svg
 
 
 def labyrinth_svg(w: int, h: int, ink: str, dim: str, accent: str, moss: str, bg: str, label: str) -> str:
@@ -176,7 +160,7 @@ h1 span{{color:{accent}}}
 .art{{align-self:start;margin-top:8px;border:1px solid {line};background:{card}}}
 </style></head><body><div class="wrap">
 <div>
-  <div class="brand">{logo}<span class="brand-name">klew</span><span class="brand-tag">MCP Context Server · Built on HydraDB</span></div>
+  <div class="brand">{logo}<span class="brand-name">Klew</span><span class="brand-tag">MCP Context Server · Built on HydraDB</span></div>
   <h1>Your codebase is a labyrinth.<br><span>Klew is the thread.</span></h1>
   <div class="hero">
     <div class="big">{pct(n["klew"])}</div>
