@@ -136,7 +136,7 @@ export default function App() {
               <button
                 type="button"
                 onClick={() => go("landing")}
-                className="btn-soft inline-flex items-center gap-2 rounded-full border border-line bg-card px-4 py-1.5 font-mono text-xs font-medium text-ink hover:bg-paper"
+                className="btn-soft hidden sm:inline-flex items-center gap-2 rounded-full border border-line bg-card px-4 py-1.5 font-mono text-xs font-medium text-ink hover:bg-paper"
               >
                 <IconArrowLeft size={14} />
                 <span>Overview</span>

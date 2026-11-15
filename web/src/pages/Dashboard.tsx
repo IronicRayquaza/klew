@@ -16,7 +16,7 @@ import {
   IconX,
 } from "../components/Icons";
 import { PathGraph } from "../components/PathGraph";
-import { WhyPath } from "../components/WhyPath";
+import { WhyPath, WhyPathCompact } from "../components/WhyPath";
 
 const EXAMPLES = [
   {
@@ -54,7 +54,10 @@ export function Dashboard() {
   // Playground UI state: center modal vs right-corner collapsed inspector
   const [activeModal, setActiveModal] = useState<ActiveModal>(null);
   const [selectedFile, setSelectedFile] = useState<string | null>(null);
-  const [cornerOpen, setCornerOpen] = useState<boolean>(true);
+  // On phones the inspector would cover the graph, so it starts collapsed there (dock button reopens it).
+  const [cornerOpen, setCornerOpen] = useState<boolean>(
+    () => typeof window === "undefined" || window.matchMedia("(min-width: 640px)").matches,
+  );
   const [showSnippet, setShowSnippet] = useState<boolean>(false);
 
   useEffect(() => {
@@ -107,7 +110,7 @@ export function Dashboard() {
         const res = await api.context(repo, nextTask, nextBudget);
         setPack(res);
         setSelectedFile(res.items[0]?.path ?? null);
-        setCornerOpen(true);
+        setCornerOpen(window.matchMedia("(min-width: 640px)").matches);
       } else if (snapshotPacks.length) {
         // Offline: only recorded packs exist. Show the closest one exactly as recorded and say so;
         // never relabel it with the typed task or re-pack it for a different budget.
@@ -131,7 +134,7 @@ export function Dashboard() {
         setBudget(found.budget_tokens);
         setPack(found);
         setSelectedFile(found.items[0]?.path ?? null);
-        setCornerOpen(true);
+        setCornerOpen(window.matchMedia("(min-width: 640px)").matches);
       }
     } catch (e) {
       setError(String((e as Error).message));
@@ -289,7 +292,7 @@ export function Dashboard() {
           3. RIGHT-CORNER COLLAPSIBLE FILE INSPECTOR DRAWER
          ===================================================================== */}
       {pack && activeItem && cornerOpen && !activeModal && (
-        <div className="surface-glass animate-drawer-in absolute top-5 right-5 z-20 flex max-h-[calc(100vh-13rem)] w-[350px] flex-col overflow-hidden rounded-3xl p-5 sm:w-[410px]">
+        <div className="surface-glass animate-drawer-in absolute top-5 right-5 z-20 flex max-h-[calc(100dvh-13rem)] w-[min(410px,calc(100vw-2.5rem))] flex-col overflow-hidden rounded-3xl p-5">
           {/* Top Navigation Bar inside Corner Card */}
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-1.5">
@@ -333,22 +336,21 @@ export function Dashboard() {
             </div>
           </div>
 
-          {/* File Title & Score */}
-          <div className="mt-3.5 flex items-baseline justify-between gap-2">
+          {/* File title + meta */}
+          <div className="mt-4 grid gap-1">
             <h3 className="truncate font-mono text-sm font-semibold text-ink" title={activeItem.path}>
               {activeItem.path}
             </h3>
-            <span className="num shrink-0 font-mono text-xs text-muted">
-              score {activeItem.score.toFixed(2)} · {activeItem.tokens} tok
-            </span>
+            <p className="num font-mono text-[11px] text-muted">
+              score {activeItem.score.toFixed(2)} · {activeItem.tokens.toLocaleString()} tok
+              {activeItem.symbols.length > 0 &&
+                ` · ${activeItem.symbols.length} symbol${activeItem.symbols.length > 1 ? "s" : ""}`}
+            </p>
           </div>
 
-          {/* Why-Path Thread */}
-          <div className="mt-3 rounded-2xl border border-line/80 bg-card/85 p-3">
-            <div className="mb-1.5 font-mono text-[10px] uppercase tracking-wider text-muted">
-              Why-path thread
-            </div>
-            <WhyPath steps={activeItem.why} reason={activeItem.seed_reason} />
+          {/* Why it is in the pack: evidence, then the thread (same shape for every file) */}
+          <div className="mt-3 min-h-0 overflow-y-auto rounded-2xl border border-line/80 bg-paper/60 p-3.5">
+            <WhyPath steps={activeItem.why} reason={activeItem.seed_reason} path={activeItem.path} />
           </div>
 
           {/* Action Row: Mark as Changed + Toggle Snippet */}
@@ -429,24 +431,24 @@ export function Dashboard() {
                     <div
                       key={it.file_id}
                       onClick={() => handleSelectFileAndCollapseToCorner(it.path)}
-                      className={`cursor-pointer rounded-2xl border p-4 transition-all ${
+                      className={`cursor-pointer rounded-2xl border p-4 transition-[background-color,border-color] duration-200 ${
                         isSel
                           ? "border-ink bg-paper"
                           : "border-line bg-paper/55 hover:border-ink/40 hover:bg-card"
                       }`}
                     >
-                      <div className="flex flex-wrap items-center justify-between gap-2">
-                        <div className="flex items-center gap-2">
-                          <span className="num rounded-full border border-line bg-card px-2.5 py-0.5 font-mono text-xs font-semibold text-ink">
-                            #{idx + 1}
-                          </span>
-                          <span className="font-mono text-sm font-semibold text-ink">{it.path}</span>
+                      <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2.5">
+                        <span className="num flex h-6 min-w-6 items-center justify-center rounded-full border border-line bg-card px-1.5 font-mono text-[11px] font-semibold text-ink">
+                          {idx + 1}
+                        </span>
+                        <div className="min-w-0">
+                          <div className="truncate font-mono text-[13px] font-semibold text-ink" title={it.path}>
+                            {it.path}
+                          </div>
+                          <div className="num font-mono text-[11px] text-muted">
+                            score {it.score.toFixed(2)} · {it.tokens.toLocaleString()} tok
+                          </div>
                         </div>
-
-                        <div className="flex items-center gap-2">
-                          <span className="num font-mono text-xs text-muted">
-                            {it.score.toFixed(2)} · {it.tokens}t
-                          </span>
                           <button
                             type="button"
                             onClick={(e) => {
@@ -462,11 +464,10 @@ export function Dashboard() {
                             {isTouch ? <IconCheck size={10} /> : <IconPlus size={10} />}
                             <span>Changed</span>
                           </button>
-                        </div>
                       </div>
 
-                      <div className="mt-2.5">
-                        <WhyPath steps={it.why} reason={it.seed_reason} />
+                      <div className="mt-3 border-t border-line/70 pt-3">
+                        <WhyPathCompact steps={it.why} reason={it.seed_reason} path={it.path} />
                       </div>
                     </div>
                   );
@@ -590,13 +591,59 @@ export function Dashboard() {
                 </button>
               </div>
 
-              <div className="mt-5 space-y-5">
-                <div className="rounded-2xl border border-line bg-paper/70 p-5">
-                  <div className="flex items-center justify-between font-mono text-xs">
-                    <span className="text-muted">Context Token Budget</span>
+              <div className="mt-5 grid gap-4">
+                {/* Repository: segmented picker, same pattern as the Evidence page */}
+                <section className="rounded-2xl border border-line bg-paper/70 p-5">
+                  <div className="flex items-baseline justify-between gap-3">
+                    <h3 id="repo-label" className="font-mono text-xs text-muted">
+                      Repository graph
+                    </h3>
+                    <span className="inline-flex items-center gap-1.5 font-mono text-[11px] text-muted">
+                      <span className={`h-1.5 w-1.5 rounded-full ${live ? "bg-moss" : "bg-guide"}`} aria-hidden="true" />
+                      {live ? "Live HydraDB" : "Recorded snapshot"}
+                    </span>
+                  </div>
+                  <div
+                    role="radiogroup"
+                    aria-labelledby="repo-label"
+                    className="mt-3 flex flex-wrap gap-1 rounded-full border border-line bg-card p-1"
+                  >
+                    {(repos.length ? repos.map((r) => r.repo) : [repo || "httpx"]).map((name) => {
+                      const on = name === repo;
+                      return (
+                        <button
+                          key={name}
+                          type="button"
+                          role="radio"
+                          aria-checked={on}
+                          disabled={!live}
+                          onClick={() => setRepo(name)}
+                          className={`btn-soft min-w-20 flex-1 rounded-full px-4 py-2 font-mono text-xs font-medium disabled:cursor-not-allowed ${
+                            on ? "bg-ink text-paper shadow-xs" : "text-muted hover:text-ink"
+                          }`}
+                        >
+                          {name}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <p className="mt-2.5 font-mono text-[11px] text-muted">
+                    {live
+                      ? "Your next query runs on the selected graph."
+                      : "Run `klew serve` to query your own graphs."}
+                  </p>
+                </section>
+
+                {/* Token budget */}
+                <section className="rounded-2xl border border-line bg-paper/70 p-5">
+                  <div className="flex items-baseline justify-between font-mono text-xs">
+                    <label htmlFor="budget" className="text-muted">
+                      Context token budget
+                    </label>
                     <span className="num font-semibold text-ink">{budget.toLocaleString()} tok</span>
                   </div>
                   <input
+                    id="budget"
                     type="range"
                     min={500}
                     max={4000}
@@ -610,55 +657,27 @@ export function Dashboard() {
                     }}
                     className="klew-slider mt-3"
                   />
-                </div>
+                  <div className="num mt-1.5 flex justify-between font-mono text-[10px] text-muted">
+                    <span>500</span>
+                    <span>2,000 (eval)</span>
+                    <span>4,000</span>
+                  </div>
+                </section>
 
-                <div className="rounded-2xl border border-line bg-paper/70 p-5">
-                  <label htmlFor="modal-repo" className="block font-mono text-xs text-muted">
-                    Repository Graph
-                  </label>
-                  <select
-                    id="modal-repo"
-                    value={repo}
-                    onChange={(e) => setRepo(e.target.value)}
-                    disabled={!live}
-                    className="mt-2 w-full rounded-xl border border-line bg-card px-3 py-2 font-mono text-xs text-ink"
-                  >
-                    {repos.length ? (
-                      repos.map((r) => (
-                        <option key={r.repo} value={r.repo}>
-                          {r.repo}
-                        </option>
-                      ))
-                    ) : (
-                      <option>{repo || "httpx"}</option>
-                    )}
-                  </select>
-                  <p className="mt-2 font-mono text-[11px] text-muted">
-                    {live
-                      ? `Connected to live HydraDB (${repo})`
-                      : "Viewing recorded snapshot (run `klew serve` for live queries)"}
-                  </p>
-                </div>
-
-                <div className="grid grid-cols-3 gap-3 text-center font-mono text-xs">
-                  <div className="rounded-2xl border border-line bg-paper/60 p-3.5">
-                    <div className="num text-base font-semibold text-ink">
-                      {stats?.files ?? "–"}
+                {/* Graph + last query */}
+                <div className="grid grid-cols-3 gap-3 font-mono">
+                  {[
+                    [stats?.files != null ? stats.files.toLocaleString() : "–", "files", repo],
+                    [stats ? stats.symbols.toLocaleString() : "–", "symbols", repo],
+                    [`${pack.timings.total_ms.toFixed(0)} ms`, "last query", `${pack.timings.queries} queries`],
+                  ].map(([v, k, sub]) => (
+                    <div key={k} className="rounded-2xl border border-line bg-paper/60 px-3 py-3.5 text-center">
+                      <div className="num text-base font-semibold text-ink">{v}</div>
+                      <div className="mt-0.5 truncate text-[10px] text-muted">
+                        {k} · {sub}
+                      </div>
                     </div>
-                    <div className="text-[10px] text-muted">files</div>
-                  </div>
-                  <div className="rounded-2xl border border-line bg-paper/60 p-3.5">
-                    <div className="num text-base font-semibold text-ink">
-                      {stats ? stats.symbols.toLocaleString() : "–"}
-                    </div>
-                    <div className="text-[10px] text-muted">symbols</div>
-                  </div>
-                  <div className="rounded-2xl border border-line bg-paper/60 p-3.5">
-                    <div className="num text-base font-semibold text-ink">
-                      {pack.timings.total_ms.toFixed(0)} ms
-                    </div>
-                    <div className="text-[10px] text-muted">{pack.timings.queries} queries</div>
-                  </div>
+                  ))}
                 </div>
               </div>
             </div>
@@ -790,7 +809,7 @@ function DockIconButton({
     >
       {children}
       {badge !== undefined && badge > 0 && (
-        <span className="num absolute -top-1 -right-1 flex h-4.5 min-w-4.5 items-center justify-center rounded-full border border-line bg-card px-1 font-mono text-[10px] font-semibold text-ink shadow-2xs">
+        <span className="num pointer-events-none absolute top-0.5 right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-trail px-1 font-mono text-[9px] leading-none font-semibold text-white ring-2 ring-card">
           {badge}
         </span>
       )}

@@ -340,7 +340,7 @@ export function PathGraph({
           if (!isFocused) return 1;
           return hasFocus ? 2.4 : 1.4;
         }}
-        linkDirectionalArrowLength={4.5}
+        linkDirectionalArrowLength={5.5}
         linkDirectionalArrowRelPos={0.86}
         linkDirectionalParticles={(l) => {
           const link = l as L;
@@ -348,7 +348,7 @@ export function PathGraph({
           if (!hasFocus) return 1;
           return link.files.has(focusFile!) ? 2 : 0;
         }}
-        linkDirectionalParticleWidth={2.4}
+        linkDirectionalParticleWidth={3.2}
         linkDirectionalParticleSpeed={0.004}
         linkDirectionalParticleColor={(l) => {
           const link = l as L;
@@ -380,12 +380,13 @@ export function PathGraph({
           // Keep unfocused nodes legible (0.48) so the user can always see and click them
           ctx.globalAlpha = isFocused ? 1 : 0.48;
 
-          const r = isHub ? 7.5 : n.kind === "file" ? 5.5 : 4;
+          // Readable at the default zoom: hub > top file > files > symbols.
+          const r = isHub ? 12 : n.kind === "file" ? (n.rank === 1 ? 10 : 8.5) : 6;
 
           // Subtle ring around active node or hub
           if (isSelectedFile || isHub) {
             ctx.beginPath();
-            ctx.arc(n.x, n.y, r + 4.5, 0, 2 * Math.PI);
+            ctx.arc(n.x, n.y, r + 5.5, 0, 2 * Math.PI);
             ctx.fillStyle = isHub
               ? "rgba(196, 122, 27, 0.15)"
               : "rgba(43, 122, 88, 0.18)";
@@ -403,7 +404,7 @@ export function PathGraph({
                 ? "#172a38"
                 : "#ffffff";
           ctx.fill();
-          ctx.lineWidth = 1.6;
+          ctx.lineWidth = n.kind === "symbol" ? 1.8 : 2.2;
           ctx.strokeStyle = n.kind === "symbol" ? "#5a6d78" : "#ffffff";
           ctx.stroke();
 
@@ -425,7 +426,7 @@ export function PathGraph({
           const pillW = textWidth + padX * 2;
           const pillH = fontSize + padY * 2;
           const pillX = n.x - pillW / 2;
-          const pillY = n.y + r + 3;
+          const pillY = n.y + r + 4;
 
           ctx.beginPath();
           ctx.roundRect(pillX, pillY, pillW, pillH, pillH / 2);
@@ -456,7 +457,7 @@ export function PathGraph({
           ctx.fillStyle = color;
           // Make both the circle and the label pill below it clickable
           ctx.beginPath();
-          ctx.roundRect(n.x - 36, n.y - 10, 72, 34, 8);
+          ctx.roundRect(n.x - 40, n.y - 14, 80, 42, 10);
           ctx.fill();
         }}
       />

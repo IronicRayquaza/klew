@@ -63,6 +63,31 @@ body {
   padding: 0;
 }
 
+/* Scrollbars in the site palette (page and every scroll container) */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--guide) transparent;
+}
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background-color: var(--guide);
+  border: 3px solid transparent;
+  border-radius: 999px;
+  background-clip: padding-box;
+}
+::-webkit-scrollbar-thumb:hover {
+  background-color: var(--muted);
+}
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
 ::selection {
   background: var(--trail-soft);
   color: var(--ink);
