@@ -3,6 +3,7 @@
   "name": "klew",
   "display_name": "Klew",
   "version": "0.1.0",
+  "icon": "icon.png",
   "description": "Gives Claude the files that matter for a coding task, found by walking a code graph in HydraDB, and learns from what you change.",
   "long_description": "Klew maps a Python repository as a graph in HydraDB (files, symbols, calls, tests, imports and files that change together). For a task, it walks that graph and returns a token-budgeted context pack with the path that justifies each file. Recording what changed teaches the graph, so the next pack is sharper.\n\nRequires uv (https://docs.astral.sh/uv/) and Docker. Before first use, run `uvx klew hydra up` and `uvx klew index /path/to/repo` in a terminal.",
   "author": { "name": "Klew contributors", "url": "https://github.com/IronicRayquaza/klew" },

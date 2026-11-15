@@ -1,0 +1,422 @@
+{
+ "repo": "httpx",
+ "head": "b5addb64f016",
+ "learned_from_commits": 268,
+ "budget_tokens": 2000,
+ "scenarios": [
+  {
+   "task": "Support NO_PROXY environment variable with CIDR ranges",
+   "off": {
+    "tokens": 1825,
+    "files": 30,
+    "ms": 315,
+    "items": [
+     {
+      "rank": 1,
+      "path": "httpx/_utils.py",
+      "score": 3.202,
+      "tokens": 313,
+      "reason": "name match: httpx/_utils.py",
+      "symbols": [
+       "def get_environment_proxies() -> dict[str, str | None]  # Gets proxy information from the environment",
+       "def is_ipv6_hostname(hostname: str) -> bool",
+       "def is_ipv4_hostname(hostname: str) -> bool"
+      ],
+      "why": [
+       {
+        "node": "httpx/_utils.py",
+        "via": null
+       }
+      ]
+     },
+     {
+      "rank": 2,
+      "path": "httpx/_client.py",
+      "score": 4.333,
+      "tokens": 242,
+      "reason": "",
+      "symbols": [
+       "def _get_proxy_map( self, proxy: ProxyTypes | None, allow_env_proxies: bool ) -> dict[str, Proxy | None]",
+       "def _init_proxy_transport( self, proxy: Proxy, verify: ssl.SSLContext | str | bool = True, cert: CertTypes | None = None, trust_env: bool = \u2026",
+       "def __init__( self, *, auth: AuthTypes | None = None, params: QueryParamTypes | None = None, headers: HeaderTypes | None = None, cookies: Co\u2026"
+      ],
+      "why": [
+       {
+        "node": "httpx._client.BaseClient._get_proxy_map",
+        "via": null
+       },
+       {
+        "node": "httpx/_client.py",
+        "via": "defined in"
+       }
+      ]
+     },
+     {
+      "rank": 3,
+      "path": "httpx/_transports/mock.py",
+      "score": 0.763,
+      "tokens": 158,
+      "reason": "",
+      "symbols": [
+       "async def handle_async_request( self, request: Request, ) -> Response",
+       "def handle_request( self, request: Request, ) -> Response",
+       "class MockTransport(AsyncBaseTransport, BaseTransport)"
+      ],
+      "why": [
+       {
+        "node": "httpx._transports.mock.MockTransport.handle_async_request",
+        "via": null
+       },
+       {
+        "node": "httpx/_transports/mock.py",
+        "via": "defined in"
+       }
+      ]
+     }
+    ]
+   },
+   "on": {
+    "tokens": 1996,
+    "files": 21,
+    "ms": 225,
+    "items": [
+     {
+      "rank": 1,
+      "path": "httpx/_utils.py",
+      "score": 5.34,
+      "tokens": 313,
+      "reason": "name match: httpx/_utils.py; learned: 'environment' \u2192 this file",
+      "symbols": [
+       "def get_environment_proxies() -> dict[str, str | None]  # Gets proxy information from the environment",
+       "def is_ipv6_hostname(hostname: str) -> bool",
+       "def is_ipv4_hostname(hostname: str) -> bool"
+      ],
+      "why": [
+       {
+        "node": "httpx/_utils.py",
+        "via": null
+       }
+      ]
+     },
+     {
+      "rank": 2,
+      "path": "httpx/_client.py",
+      "score": 3.442,
+      "tokens": 242,
+      "reason": "learned: 'variable' \u2192 this file",
+      "symbols": [
+       "def _get_proxy_map( self, proxy: ProxyTypes | None, allow_env_proxies: bool ) -> dict[str, Proxy | None]",
+       "def _init_proxy_transport( self, proxy: Proxy, verify: ssl.SSLContext | str | bool = True, cert: CertTypes | None = None, trust_env: bool = \u2026",
+       "def __init__( self, *, auth: AuthTypes | None = None, params: QueryParamTypes | None = None, headers: HeaderTypes | None = None, cookies: Co\u2026"
+      ],
+      "why": [
+       {
+        "node": "httpx/_client.py",
+        "via": null
+       }
+      ]
+     },
+     {
+      "rank": 3,
+      "path": "tests/test_utils.py",
+      "score": 2.587,
+      "tokens": 271,
+      "reason": "learned: 'environment' \u2192 this file",
+      "symbols": [
+       "def test_get_environment_proxies(environment, proxies)",
+       "def test_url_matches(pattern, url, expected)",
+       "def test_pattern_priority()"
+      ],
+      "why": [
+       {
+        "node": "tests/test_utils.py",
+        "via": null
+       }
+      ]
+     }
+    ]
+   },
+   "vector_top": [
+    "tests/client/test_proxies.py",
+    "httpx/_utils.py",
+    "tests/test_utils.py"
+   ]
+  },
+  {
+   "task": "Raise ReadTimeout when the server stalls while streaming the response body",
+   "off": {
+    "tokens": 1131,
+    "files": 30,
+    "ms": 145,
+    "items": [
+     {
+      "rank": 1,
+      "path": "httpx/_exceptions.py",
+      "score": 5.378,
+      "tokens": 116,
+      "reason": "name match: httpx/_exceptions.py",
+      "symbols": [
+       "class ReadTimeout(TimeoutException)  # Timed out while receiving data from the host.",
+       "class ResponseNotRead(StreamError)  # Attempted to access streaming response content, without having called `read()`.",
+       "def request_context( request: Request | None = None, ) -> typing.Iterator[None]  # A context manager that can be used to attach the given request context"
+      ],
+      "why": [
+       {
+        "node": "httpx/_exceptions.py",
+        "via": null
+       }
+      ]
+     },
+     {
+      "rank": 2,
+      "path": "httpx/_models.py",
+      "score": 6.161,
+      "tokens": 168,
+      "reason": "",
+      "symbols": [
+       "def close(self) -> None  # Close the response and release the connection.",
+       "async def aclose(self) -> None  # Close the response and release the connection.",
+       "def content(self) -> bytes"
+      ],
+      "why": [
+       {
+        "node": "httpx._models.Response.close",
+        "via": null
+       },
+       {
+        "node": "httpx/_models.py",
+        "via": "defined in"
+       }
+      ]
+     },
+     {
+      "rank": 3,
+      "path": "tests/test_wsgi.py",
+      "score": 2.789,
+      "tokens": 201,
+      "reason": "",
+      "symbols": [
+       "def echo_body_with_response_stream( environ: WSGIEnvironment, start_response: StartResponse ) -> typing.Iterable[bytes]",
+       "def output_generator(f: typing.IO[bytes]) -> typing.Iterator[bytes]",
+       "def application(environ, start_response)"
+      ],
+      "why": [
+       {
+        "node": "tests.test_wsgi.echo_body_with_response_stream.output_generator",
+        "via": null
+       },
+       {
+        "node": "tests/test_wsgi.py",
+        "via": "defined in"
+       }
+      ]
+     }
+    ]
+   },
+   "on": {
+    "tokens": 1936,
+    "files": 30,
+    "ms": 278,
+    "items": [
+     {
+      "rank": 1,
+      "path": "httpx/_exceptions.py",
+      "score": 5.385,
+      "tokens": 116,
+      "reason": "name match: httpx/_exceptions.py; learned: 'body' \u2192 this file",
+      "symbols": [
+       "class ReadTimeout(TimeoutException)  # Timed out while receiving data from the host.",
+       "class ResponseNotRead(StreamError)  # Attempted to access streaming response content, without having called `read()`.",
+       "def request_context( request: Request | None = None, ) -> typing.Iterator[None]  # A context manager that can be used to attach the given request context"
+      ],
+      "why": [
+       {
+        "node": "httpx/_exceptions.py",
+        "via": null
+       }
+      ]
+     },
+     {
+      "rank": 2,
+      "path": "httpx/_models.py",
+      "score": 3.983,
+      "tokens": 168,
+      "reason": "learned: 'raise' \u2192 this file",
+      "symbols": [
+       "def close(self) -> None  # Close the response and release the connection.",
+       "async def aclose(self) -> None  # Close the response and release the connection.",
+       "def content(self) -> bytes"
+      ],
+      "why": [
+       {
+        "node": "httpx/_models.py",
+        "via": null
+       }
+      ]
+     },
+     {
+      "rank": 3,
+      "path": "tests/test_wsgi.py",
+      "score": 2.036,
+      "tokens": 201,
+      "reason": "learned: 'serv' \u2192 this file",
+      "symbols": [
+       "def echo_body_with_response_stream( environ: WSGIEnvironment, start_response: StartResponse ) -> typing.Iterable[bytes]",
+       "def output_generator(f: typing.IO[bytes]) -> typing.Iterator[bytes]",
+       "def application(environ, start_response)"
+      ],
+      "why": [
+       {
+        "node": "tests/test_wsgi.py",
+        "via": null
+       }
+      ]
+     }
+    ]
+   },
+   "vector_top": [
+    "tests/client/test_async_client.py",
+    "httpx/_client.py",
+    "httpx/_exceptions.py"
+   ]
+  },
+  {
+   "task": "Client.send should not follow redirects to another origin with auth headers",
+   "off": {
+    "tokens": 1999,
+    "files": 20,
+    "ms": 197,
+    "items": [
+     {
+      "rank": 1,
+      "path": "httpx/_client.py",
+      "score": 14.569,
+      "tokens": 385,
+      "reason": "mentions `Client`",
+      "symbols": [
+       "def send( self, request: Request, *, stream: bool = False, auth: AuthTypes | UseClientDefault | None = USE_CLIENT_DEFAULT, follow_redirects:\u2026  # Send a request.",
+       "async def send( self, request: Request, *, stream: bool = False, auth: AuthTypes | UseClientDefault | None = USE_CLIENT_DEFAULT, follow_redi\u2026  # Send a request.",
+       "def request( self, method: str, url: URL | str, *, content: RequestContent | None = None, data: RequestData | None = None, files: RequestFil\u2026  # Build and send a request."
+      ],
+      "why": [
+       {
+        "node": "httpx/_client.py",
+        "via": null
+       }
+      ]
+     },
+     {
+      "rank": 2,
+      "path": "httpx/_transports/asgi.py",
+      "score": 1.557,
+      "tokens": 209,
+      "reason": "",
+      "symbols": [
+       "async def send(message: typing.MutableMapping[str, typing.Any]) -> None",
+       "async def handle_async_request( self, request: Request, ) -> Response",
+       "async def receive() -> dict[str, typing.Any]"
+      ],
+      "why": [
+       {
+        "node": "httpx._transports.asgi.ASGITransport.handle_async_request.send",
+        "via": null
+       },
+       {
+        "node": "httpx/_transports/asgi.py",
+        "via": "defined in"
+       }
+      ]
+     },
+     {
+      "rank": 3,
+      "path": "tests/client/test_headers.py",
+      "score": 0.209,
+      "tokens": 312,
+      "reason": "",
+      "symbols": [
+       "def test_header_update()",
+       "def test_header_repeated_multi_items()",
+       "def test_host_with_auth_and_port_in_url()  # The Host header should only include the hostname, or hostname:port"
+      ],
+      "why": [
+       {
+        "node": "httpx/_client.py",
+        "via": null
+       },
+       {
+        "node": "tests/client/test_headers.py",
+        "via": "co-changes with"
+       }
+      ]
+     }
+    ]
+   },
+   "on": {
+    "tokens": 1999,
+    "files": 23,
+    "ms": 310,
+    "items": [
+     {
+      "rank": 1,
+      "path": "httpx/_client.py",
+      "score": 15.927,
+      "tokens": 385,
+      "reason": "mentions `Client`; learned: 'redirect' \u2192 this file",
+      "symbols": [
+       "def send( self, request: Request, *, stream: bool = False, auth: AuthTypes | UseClientDefault | None = USE_CLIENT_DEFAULT, follow_redirects:\u2026  # Send a request.",
+       "async def send( self, request: Request, *, stream: bool = False, auth: AuthTypes | UseClientDefault | None = USE_CLIENT_DEFAULT, follow_redi\u2026  # Send a request.",
+       "def request( self, method: str, url: URL | str, *, content: RequestContent | None = None, data: RequestData | None = None, files: RequestFil\u2026  # Build and send a request."
+      ],
+      "why": [
+       {
+        "node": "httpx/_client.py",
+        "via": null
+       }
+      ]
+     },
+     {
+      "rank": 2,
+      "path": "tests/test_utils.py",
+      "score": 1.747,
+      "tokens": 135,
+      "reason": "learned: 'redirect' \u2192 this file",
+      "symbols": [
+       "def test_logging_request(server, caplog)",
+       "def test_logging_redirect_chain(server, caplog)",
+       "def test_pattern_priority()"
+      ],
+      "why": [
+       {
+        "node": "tests/test_utils.py",
+        "via": null
+       }
+      ]
+     },
+     {
+      "rank": 3,
+      "path": "tests/client/test_redirects.py",
+      "score": 0.929,
+      "tokens": 108,
+      "reason": "learned: 'redirect' \u2192 this file",
+      "symbols": [
+       "def test_redirect_302()",
+       "def test_redirect_loop()",
+       "def test_multiple_redirects()"
+      ],
+      "why": [
+       {
+        "node": "tests/client/test_redirects.py",
+        "via": null
+       }
+      ]
+     }
+    ]
+   },
+   "vector_top": [
+    "httpx/_client.py",
+    "tests/client/test_redirects.py",
+    "tests/client/test_headers.py"
+   ]
+  }
+ ]
+}

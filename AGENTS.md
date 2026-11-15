@@ -81,11 +81,11 @@ Status: ✅ done · 🟡 in progress · ⬜ todo
 | `klew/mcp_server.py` | interface | ✅ | MCP v2 `MCPServer`, stdio: get_context, record_outcome, explain, graph_stats |
 | `klew/cli.py` | interface | ✅ | `index`, `context`, `learn-git`, `stats`, `eval`, `serve`, `mcp` |
 | `klew/api.py` | interface | ✅ | FastAPI for the dashboard (context, outcome, runs, subgraph, eval) |
-| `web/` | frontend | ✅ | Landing (`#`), Dashboard (`#app`), Results (`#results`), Docs (`#docs/<slug>`); falls back to `public/snapshot/` without the API; checked at 390px and 1280px, light and dark |
+| `web/` | frontend | ✅ | Soft light redesign (PR #1). Overview (`#`), Playground (`#app`, full-screen graph), Evidence (`#results`), Docs (`#docs/<slug>`); falls back to `public/snapshot/` without the API; checked at 390px and 1280px, light and dark |
 | `web/src/docs/*.md` | docs | ✅ | 12-page manual (quickstart, MCP, CLI, REST API, Action, library, concepts, architecture, evaluation, integrations/plans, FAQ). Examples are real recorded outputs; regenerate them if behaviour changes |
 | `eval/results/` | eval | ✅ | final httpx + flask results (5 arms); charts in `docs/img/` |
 | `action/`, `.github/workflows/` | product | ✅ | learn-on-merge Action, example workflow, CI (ruff, pytest, live HydraDB, web build); CI not yet run on GitHub |
-| `scripts/` | tooling | ✅ | `tune.py` (held-in grid), `readme_results.py`, `snapshot_web.py` |
+| `scripts/` | tooling | ✅ | `tune.py` (held-in grid), `readme_results.py`, `snapshot_web.py`, `hero_snapshot.py` (landing hero packs) |
 | `klew/eval/stats.py` | eval | ✅ | paired bootstrap CIs → `ci_held_out` |
 | `Dockerfile.demo`, `deploy/demo-*.sh`, `render.yaml` | deploy | ✅ | single-container hosted demo (Render Free); see `docs/DEPLOY.md` |
 | `README.md`, `JUDGES.md`, `docs/VIDEO.md` | docs | ✅ | README results come from the JSON via `scripts/readme_results.py` |
@@ -121,6 +121,18 @@ Status: ✅ done · 🟡 in progress · ⬜ todo
 
 ## Latest changes (newest first)
 
+- **2026-11-15 H19: UI redesign merged (PR #1 by B, `ui/klew-labyrinth`), with data fixes.**
+  - New brand mark (`favicon.svg`, `Logo.tsx`, `packages/mcpb/icon.png`, social cards), soft light theme
+    (`index.css`), Overview / full-screen graph Playground / Evidence (repo switcher, httpx first) / Docs.
+  - Merge kept main's H18 work the PR predated: `ci_held_out` type + **Key comparisons** panel (CIs), demo-mode
+    banner and slow-server button text in the Playground, plus the "How we test" timeline and metric glossary.
+  - Landing hero (`LabyrinthHero.tsx`) now renders **real recorded packs** from `web/public/snapshot/hero.json`
+    (`scripts/hero_snapshot.py`: clean httpx graph warm-started on 268 commits; each task answered with learning
+    off vs on; vector RAG's top 3 for contrast). The PR's hand-drawn scenarios had invented tokens/weights/scores
+    and contradicted real output (e.g. ReadTimeout's real #1 is `_exceptions.py`).
+  - Removed hard-coded fallback numbers on the landing page (some were wrong, e.g. 2,175 / 3,742 tok); learning lift
+    is now MRR (significant on every repo; in-context lift isn't on ODS); "80-line chunks" → 40 (the real window);
+    "Blind-start tasks avoided" relabelled to what it counts; MRR shown as % like the docs; held-out count computed.
 - **2026-11-15 H18: confidence intervals, native MSpaths explain, hosted demo container.**
   - `klew/eval/stats.py`: paired bootstrap 95% CIs (2,000 resamples) for the key comparisons, stored as
     `ci_held_out` in every `eval/results/*.json` (`scripts/annotate_results.py`). Shown in the README ("Key
@@ -259,15 +271,9 @@ Status: ✅ done · 🟡 in progress · ⬜ todo
 
 ## Next up
 
-- **B (teammate): UI pass on `web/`.** The pages are Landing `src/pages/Landing.tsx`, Dashboard
-  `src/pages/Dashboard.tsx`, Results `src/pages/Results.tsx`, and Docs `src/pages/Docs.tsx` + `src/docs/*.md`.
-  Theme tokens live in `src/index.css` (light and dark). Run it with `klew serve` + `cd web && npm run dev`.
-  Starting backlog:
-  - Consider leading the landing stats with the hybrid (83% right-file-in-context) instead of graph-only (77%).
-  - The Results page lists repos alphabetically (flask first); httpx first may read better.
-  - The why-path force graph clips nodes at its edges; consider fitting the view after layout (`zoomToFit`).
-  - Keep every number sourced from `eval/results/*.json` (snapshot: `scripts/snapshot_web.py`). Never hard-code results.
-  - Check at 390px and 1280px in both themes; the page must not scroll horizontally.
+- **B (teammate): UI pass on `web/` ✅ merged (H19).** Rule stands: every number on a page comes from
+  `eval/results/*.json` or a recorded snapshot (`scripts/snapshot_web.py`, `scripts/hero_snapshot.py`); never
+  hand-write results or example outputs. Check 390px and 1280px in both themes.
 - **Owner: go live on Render.** Push, then Render → New → Blueprint → `IronicRayquaza/klew` (uses
   `render.yaml`). Once live, set the repo Actions variable `KLEW_DEMO_URL` so keep-awake pings it.
 - **Everyone:** make the repo public before submitting; record the Loom (`docs/VIDEO.md`, update numbers to

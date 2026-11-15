@@ -27,8 +27,8 @@ often than vector RAG (72–95% vs 35–58% across three repositories), at about
 a difference that is statistically significant on every repository. Ranking is closer: with vector results as
 extra seeds, Klew ranks the right file higher than vector RAG with significance on httpx and flask (top-1 56.8%
 vs 47.2% on httpx); on ODS only its MRR gain is significant. Without vector seeds, Klew's ranking is level with
-vector RAG on httpx and ODS. So the strongest setup is both together. The cost is latency: about 0.2–0.4 s per request versus about 15 ms for a
-vector lookup. See [Evaluation](#docs/evaluation).
+vector RAG on httpx and ODS. So the strongest setup is both together. The cost is latency: about 0.3 s per request on httpx and 0.9 s on ODS, versus about
+15–45 ms for a vector lookup. See [Evaluation](#docs/evaluation).
 
 **How fast is it?**
 On httpx (60 files, 1,240 symbols), indexing takes about a second and a context pack takes about
