@@ -167,7 +167,7 @@ export default function App() {
         {tab === "docs" && <Docs slug={route.sub} onNavigate={(s) => go("docs", s)} />}
       </main>
 
-      {/* Soft Architectural Card Footer over Full-Size Top-Masked footerBg1.webp */}
+      {/* Soft Architectural Card Footer over Full-Size Top-Masked footerBg2.webp */}
       {!isPlayground && (
         <footer className="relative mt-16 w-full overflow-hidden pt-28 pb-16">
           {/* Full-Size Background Image with Top Masked Blend into Page Paper */}
@@ -181,10 +181,10 @@ export default function App() {
             }}
           >
             <img
-              src="/footerBg1.webp"
+              src="/footerBg2.webp"
               alt=""
               aria-hidden="true"
-              className="h-full w-full object-cover object-left-bottom select-none"
+              className="h-full w-full object-cover object-center select-none"
             />
           </div>
 
