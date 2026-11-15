@@ -1,8 +1,11 @@
 # Free hosting tiers sleep when idle. Ping the hosted demo every 10 minutes so judges never wait for a cold start.
 # Set the repository variable KLEW_DEMO_URL (Settings → Secrets and variables → Actions → Variables).
+# GitHub schedules are best-effort and skip busy top-of-hour slots, so this runs off-peak (:03, :13, ...).
+# It's a backup: an external uptime monitor pinging /api/health every 5 minutes is the reliable keep-awake.
 name: keep-awake
 on:
-  schedule: [{ cron: "*/10 * * * *" }]
+  schedule:
+    - cron: "3,13,23,33,43,53 * * * *"
   workflow_dispatch:
 jobs:
   ping:

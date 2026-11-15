@@ -34,7 +34,7 @@ const MYTH_CARDS = [
     eyebrow: "The Desire Path",
     mythFrom: "Myth: Worn Trail",
     klewTo: "Klew: Continual Learning",
-    title: "Paths that grow stronger with every merged PR",
+    title: "Paths that grow stronger with every merged\u00a0PR",
     body: "After an agent run or merged PR, record_outcome reinforces the paths that led to the files that actually changed and gently decays served misses. Structural facts stay untouched, so re-indexing never erases experience.",
     image: "/card3.webp",
   },
@@ -315,7 +315,7 @@ klew context "Raise ReadTimeout when stream times out"`;
                       <span>{card.klewTo}</span>
                     </span>
                   </div>
-                  <h3 className="mt-3 font-display text-xl font-semibold leading-snug tracking-tight text-ink sm:text-[22px]">
+                  <h3 className="mt-3 font-display text-xl font-semibold leading-snug tracking-tight text-balance text-ink sm:text-[22px]">
                     {card.title}
                   </h3>
                   <p className="mt-3 text-sm leading-relaxed text-muted">{card.body}</p>
