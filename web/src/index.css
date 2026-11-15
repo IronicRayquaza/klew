@@ -354,3 +354,101 @@ input[type="range"].klew-slider::-moz-range-thumb {
   padding: 1rem 1.25rem;
   color: var(--muted);
 }
+
+/* Playground guide (driver.js) in the Klew theme */
+.driver-popover.klew-tour {
+  background: var(--card);
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  padding: 18px 20px 16px;
+  max-width: min(360px, calc(100vw - 32px));
+  box-shadow:
+    0 18px 48px -12px rgba(23, 42, 56, 0.28),
+    0 2px 6px rgba(23, 42, 56, 0.06);
+  font-family: var(--font-sans);
+}
+.klew-tour .driver-popover-title {
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  line-height: 1.25;
+  color: var(--ink);
+  padding-right: 22px;
+}
+.klew-tour .driver-popover-description {
+  margin-top: 8px;
+  font-size: 13.5px;
+  line-height: 1.55;
+  color: var(--ink-soft);
+}
+.klew-tour .driver-popover-description b {
+  color: var(--ink);
+  font-weight: 600;
+}
+.klew-tour .driver-popover-close-btn {
+  color: var(--muted);
+  top: 10px;
+  right: 10px;
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+}
+.klew-tour .driver-popover-close-btn:hover {
+  color: var(--ink);
+  background: var(--paper);
+}
+.klew-tour .driver-popover-footer {
+  margin-top: 16px;
+  gap: 8px;
+  align-items: center;
+}
+.klew-tour .driver-popover-progress-text {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--trail);
+}
+.klew-tour .driver-popover-navigation-btns {
+  gap: 6px;
+}
+.klew-tour .driver-popover-footer button {
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 500;
+  text-shadow: none;
+  border-radius: 999px;
+  padding: 7px 14px;
+  border: 1px solid var(--line);
+  background: var(--card);
+  color: var(--ink);
+  transition:
+    background-color 160ms ease,
+    color 160ms ease,
+    transform 160ms ease;
+}
+.klew-tour .driver-popover-footer button:hover {
+  background: var(--paper);
+}
+.klew-tour .driver-popover-footer button:active {
+  transform: scale(0.96);
+}
+.klew-tour .driver-popover-footer .driver-popover-next-btn {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--paper);
+}
+.klew-tour .driver-popover-footer .driver-popover-next-btn:hover {
+  background: #23394a;
+}
+.klew-tour .driver-popover-footer button.klew-tour-skip {
+  border-color: transparent;
+  background: transparent;
+  color: var(--muted);
+  padding-left: 4px;
+  margin-right: auto;
+}
+.klew-tour .driver-popover-footer button.klew-tour-skip:hover {
+  color: var(--ink);
+  background: transparent;
+}

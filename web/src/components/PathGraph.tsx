@@ -258,7 +258,7 @@ export function PathGraph({
   return (
     <div ref={wrap} className="relative h-full w-full overflow-hidden bg-playground-dots">
       {/* Top-Left Canvas Controls & Hint Pill (never overlaps the bottom prompt composer) */}
-      <div className="surface-glass absolute top-5 left-5 z-10 flex flex-wrap items-center gap-1 rounded-full p-1">
+      <div data-tour="graph-controls" className="surface-glass absolute top-5 left-5 z-10 flex flex-wrap items-center gap-1 rounded-full p-1">
         <button
           type="button"
           onClick={() => zoomBy(1.25)}

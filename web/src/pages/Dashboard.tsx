@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   api,
   backendUp,
@@ -17,6 +17,9 @@ import {
 } from "../components/Icons";
 import { PathGraph } from "../components/PathGraph";
 import { WhyPath, WhyPathCompact } from "../components/WhyPath";
+import { WaitlistModal } from "../components/WaitlistModal";
+import { startPlaygroundTour } from "../components/playgroundTour";
+import type { Driver } from "driver.js";
 
 const EXAMPLES = [
   {
@@ -59,6 +62,24 @@ export function Dashboard() {
     () => typeof window === "undefined" || window.matchMedia("(min-width: 640px)").matches,
   );
   const [showSnippet, setShowSnippet] = useState<boolean>(false);
+  const [waitlistOpen, setWaitlistOpen] = useState(false);
+  const tourRef = useRef<Driver | null>(null);
+  const demoRef = useRef(false);
+  demoRef.current = demo;
+
+  // The Playground manual: starts every time the Playground opens; Skip on every step, "?" in the dock replays it.
+  const startTour = () => {
+    tourRef.current?.destroy();
+    setWaitlistOpen(false);
+    tourRef.current = startPlaygroundTour({ setModal: setActiveModal, setInspector: setCornerOpen, demo: demoRef.current });
+  };
+  useEffect(() => {
+    const t = window.setTimeout(startTour, 900);
+    return () => {
+      window.clearTimeout(t);
+      tourRef.current?.destroy();
+    };
+  }, []);
 
   useEffect(() => {
     (async () => {
@@ -220,6 +241,7 @@ export function Dashboard() {
       <aside
         className="surface-glass absolute top-1/2 left-5 z-20 flex -translate-y-1/2 flex-col items-center gap-2 rounded-3xl p-2"
         aria-label="Playground tools"
+        data-tour="dock"
       >
         {/* Files Modal Trigger */}
         <DockIconButton
@@ -286,15 +308,37 @@ export function Dashboard() {
             <path d="M14 3v18" />
           </svg>
         </DockIconButton>
+
+        <div className="my-0.5 h-px w-6 bg-line" />
+
+        {/* Use your own repo -> waitlist */}
+        <DockIconButton active={waitlistOpen} onClick={() => setWaitlistOpen(true)} label="Use your repo" tour="byo">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="6" cy="6" r="2.5" />
+            <circle cx="6" cy="18" r="2.5" />
+            <path d="M6 8.5v7" />
+            <path d="M18 9v6" />
+            <path d="M15 12h6" />
+          </svg>
+        </DockIconButton>
+
+        {/* Replay the Playground guide */}
+        <DockIconButton onClick={startTour} label="Playground guide" tour="help">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="9.5" />
+            <path d="M9.6 9.3a2.5 2.5 0 0 1 4.8.9c0 1.7-2.4 2.2-2.4 3.6" />
+            <circle cx="12" cy="17.2" r="0.6" fill="currentColor" />
+          </svg>
+        </DockIconButton>
       </aside>
 
       {/* =====================================================================
           3. RIGHT-CORNER COLLAPSIBLE FILE INSPECTOR DRAWER
          ===================================================================== */}
       {pack && activeItem && cornerOpen && !activeModal && (
-        <div className="surface-glass animate-drawer-in absolute top-5 right-5 z-20 flex max-h-[calc(100dvh-13rem)] w-[min(410px,calc(100vw-2.5rem))] flex-col overflow-hidden rounded-3xl p-5">
+        <div data-tour="inspector" className="surface-glass animate-drawer-in absolute top-5 right-5 z-20 flex max-h-[calc(100dvh-13rem)] w-[min(410px,calc(100vw-2.5rem))] flex-col overflow-hidden rounded-3xl p-5">
           {/* Top Navigation Bar inside Corner Card */}
-          <div className="flex items-center justify-between gap-2">
+          <div data-tour="inspector-nav" className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-1.5">
               <button
                 type="button"
@@ -337,7 +381,7 @@ export function Dashboard() {
           </div>
 
           {/* File title + meta */}
-          <div className="mt-4 grid gap-1">
+          <div data-tour="inspector-meta" className="mt-4 grid gap-1">
             <h3 className="truncate font-mono text-sm font-semibold text-ink" title={activeItem.path}>
               {activeItem.path}
             </h3>
@@ -354,7 +398,7 @@ export function Dashboard() {
           </div>
 
           {/* Action Row: Mark as Changed + Toggle Snippet */}
-          <div className="mt-3.5 flex items-center justify-between gap-2">
+          <div data-tour="inspector-actions" className="mt-3.5 flex items-center justify-between gap-2">
             <button
               type="button"
               onClick={() => toggleTouch(activeItem.path)}
@@ -400,6 +444,7 @@ export function Dashboard() {
           {activeModal === "files" && (
             <div
               onClick={(e) => e.stopPropagation()}
+              data-tour="files-modal"
               className="surface-card animate-modal-in flex max-h-[80vh] w-[min(92vw,56rem)] flex-col overflow-hidden p-6 sm:p-8"
             >
               <div className="flex items-start justify-between gap-4 border-b border-line pb-5">
@@ -480,6 +525,7 @@ export function Dashboard() {
           {activeModal === "learn" && (
             <div
               onClick={(e) => e.stopPropagation()}
+              data-tour="teach-modal"
               className="surface-card animate-modal-in w-[min(92vw,42rem)] p-6 sm:p-8"
             >
               <div className="flex items-start justify-between gap-4 border-b border-line pb-4">
@@ -593,7 +639,7 @@ export function Dashboard() {
 
               <div className="mt-5 grid gap-4">
                 {/* Repository: segmented picker, same pattern as the Evidence page */}
-                <section className="rounded-2xl border border-line bg-paper/70 p-5">
+                <section data-tour="settings-repo" className="rounded-2xl border border-line bg-paper/70 p-5">
                   <div className="flex items-baseline justify-between gap-3">
                     <h3 id="repo-label" className="font-mono text-xs text-muted">
                       Repository graph
@@ -627,15 +673,28 @@ export function Dashboard() {
                       );
                     })}
                   </div>
-                  <p className="mt-2.5 font-mono text-[11px] text-muted">
-                    {live
-                      ? "Your next query runs on the selected graph."
-                      : "Run `klew serve` to query your own graphs."}
-                  </p>
+                  <div className="mt-2.5 flex flex-wrap items-center justify-between gap-2">
+                    <p className="font-mono text-[11px] text-muted">
+                      {live
+                        ? "Your next query runs on the selected graph."
+                        : "Run `klew serve` to query your own graphs."}
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setActiveModal(null);
+                        setWaitlistOpen(true);
+                      }}
+                      className="btn-soft inline-flex items-center gap-1 font-mono text-[11px] font-medium text-trail hover:text-ink"
+                    >
+                      <span>Use your own repo</span>
+                      <IconArrowRight size={11} />
+                    </button>
+                  </div>
                 </section>
 
                 {/* Token budget */}
-                <section className="rounded-2xl border border-line bg-paper/70 p-5">
+                <section data-tour="settings-budget" className="rounded-2xl border border-line bg-paper/70 p-5">
                   <div className="flex items-baseline justify-between font-mono text-xs">
                     <label htmlFor="budget" className="text-muted">
                       Context token budget
@@ -665,7 +724,7 @@ export function Dashboard() {
                 </section>
 
                 {/* Graph + last query */}
-                <div className="grid grid-cols-3 gap-3 font-mono">
+                <div data-tour="settings-stats" className="grid grid-cols-3 gap-3 font-mono">
                   {[
                     [stats?.files != null ? stats.files.toLocaleString() : "–", "files", repo],
                     [stats ? stats.symbols.toLocaleString() : "–", "symbols", repo],
@@ -698,7 +757,7 @@ export function Dashboard() {
         )}
 
         {/* Example Task Pills floating above the prompt box */}
-        <div className="pointer-events-auto flex flex-wrap items-center justify-center gap-1.5">
+        <div data-tour="examples" className="pointer-events-auto flex flex-wrap items-center justify-center gap-1.5">
           {EXAMPLES.map((ex) => {
             const isCurrent = task === ex.full;
             return (
@@ -722,7 +781,7 @@ export function Dashboard() {
         </div>
 
         {/* Agent Chat Input Box (looks like a true prompt composer, no dot circle) */}
-        <div className="pointer-events-auto w-full rounded-2xl border border-line bg-card/95 p-3 shadow-lg backdrop-blur-md">
+        <div data-tour="task" className="pointer-events-auto w-full rounded-2xl border border-line bg-card/95 p-3 shadow-lg backdrop-blur-md">
           <input
             value={task}
             onChange={(e) => setTask(e.target.value)}
@@ -732,7 +791,7 @@ export function Dashboard() {
           />
 
           <div className="mt-2.5 flex flex-wrap items-center justify-between gap-2 border-t border-line/70 pt-2.5 pl-1">
-            <div className="flex flex-wrap items-center gap-1.5 font-mono text-[11px] text-muted">
+            <div data-tour="chips" className="flex flex-wrap items-center gap-1.5 font-mono text-[11px] text-muted">
               <button
                 type="button"
                 onClick={() => setActiveModal("settings")}
@@ -778,6 +837,8 @@ export function Dashboard() {
           </div>
         )}
       </div>
+
+      {waitlistOpen && <WaitlistModal onClose={() => setWaitlistOpen(false)} />}
     </div>
   );
 }
@@ -787,12 +848,14 @@ function DockIconButton({
   onClick,
   label,
   badge,
+  tour,
   children,
 }: {
   active?: boolean;
   onClick: () => void;
   label: string;
   badge?: number;
+  tour?: string;
   children: React.ReactNode;
 }) {
   return (
@@ -801,6 +864,7 @@ function DockIconButton({
       onClick={onClick}
       title={label}
       aria-label={label}
+      data-tour={tour}
       className={`btn-soft group relative flex h-11 w-11 items-center justify-center rounded-2xl transition-colors ${
         active
           ? "bg-ink text-paper shadow-sm"

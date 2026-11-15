@@ -28,8 +28,8 @@ Judging: engineering + go-to-market. Hard rule: "it has to earn its place over a
   3. **Loom walkthrough**.
 - **Deadline: 9 AM IST, Nov 16.**
 
-Submission checklist: [x] live deployment (https://klew-demo.onrender.com) · [ ] repo renamed `klew` and public ·
-[x] graph ablation (walk off) in the eval · [x] continual-learning chart · [ ] Loom · [ ] X/LinkedIn posts.
+Submission checklist: [x] live deployment (https://klew-demo.onrender.com) · [x] repo renamed `klew` and public ·
+[x] graph ablation (walk off) in the eval · [x] continual-learning chart · [x] Loom · [x] X/LinkedIn posts · [x] submitted.
 
 ## Reading order
 
@@ -121,6 +121,15 @@ Status: ✅ done · 🟡 in progress · ⬜ todo
 
 ## Latest changes (newest first)
 
+- **2026-11-16 H21: Playground guide + waitlist (judge feedback: make it easier to understand, more SaaS).**
+  - driver.js 1.10.2 (pinned) tour, `web/src/components/playgroundTour.ts`: 20 steps over every control (task box,
+    examples, repo/budget chips, graph legend + controls, dock, inspector nav/meta/Evidence/Thread/actions, Files,
+    Teach, Settings repo/budget/stats, Use your repo, help). Starts every time the Playground opens; Skip on every step,
+    Esc closes, "?" in the dock replays. Steps open the modal/inspector they need (`prep`), forward and back.
+    Anchors are `data-tour="…"` attributes; keep them when editing Dashboard.tsx / PathGraph.tsx / WhyPath.tsx.
+  - Waitlist instead of auth: dock button "Use your repo" + link in Settings → `WaitlistModal.tsx` (name, email,
+    optional repo URL, honeypot) → `POST /api/waitlist` → Resend email to `WAITLIST_TO` (env, never in the repo).
+    3 per 10 min per IP. `tests/test_waitlist.py` (network mocked). Setup: `docs/DEPLOY.md` → Waitlist emails.
 - **2026-11-15 H20: live on Render, demo video, release built.**
   - Live: https://klew-demo.onrender.com (keep-awake on). `scripts/vs_rag.py`: Klew vs vector RAG side by side on
     commits the graph has never seen (graph rebuilt as of an older commit, warm-started only on history before it;

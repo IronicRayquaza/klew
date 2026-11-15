@@ -11,3 +11,8 @@ services:
     envVars:
       - key: KLEW_RATE_PER_MIN
         value: "30"
+      # Waitlist ("use your own repo"): sign-ups are emailed via Resend. Set both in the Render dashboard.
+      - key: RESEND_API_KEY
+        sync: false
+      - key: WAITLIST_TO
+        sync: false

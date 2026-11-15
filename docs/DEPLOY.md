@@ -34,3 +34,17 @@ Writes are rate-limited (`KLEW_RATE_PER_MIN`, default 30 per minute per IP).
 docker build -f Dockerfile.demo -t klew-demo .
 docker run --rm -p 7860:7860 klew-demo        # http://localhost:7860
 ```
+
+## Waitlist emails ("Use your repo")
+
+The Playground's **Use your repo** button opens a waitlist form (name, email, optional repo link).
+`POST /api/waitlist` emails each sign-up to you through [Resend](https://resend.com):
+
+1. Create a free Resend account with the inbox you want sign-ups delivered to, and create an API key.
+2. In Render → your service → **Environment**, add `RESEND_API_KEY` (the key) and `WAITLIST_TO`
+   (that same inbox), then redeploy.
+
+Without a verified domain, Resend's shared sender (`onboarding@resend.dev`) can only deliver to your Resend
+account's own address, so `WAITLIST_TO` must be that address. Set `WAITLIST_FROM` once you verify a domain.
+Without the key the form says "The waitlist isn't configured on this server yet." Sign-ups are rate-limited to
+3 per 10 minutes per IP (`KLEW_WAITLIST_PER_10MIN`), and a hidden honeypot field drops bots.

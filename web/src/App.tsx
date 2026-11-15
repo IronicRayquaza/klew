@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { IconArrowLeft, IconArrowRight, IconCheck, IconCopy } from "./components/Icons";
 import { LogoWithName, Wordmark } from "./components/Logo";
+import { WaitlistModal } from "./components/WaitlistModal";
 import { Dashboard } from "./pages/Dashboard";
 import { Docs } from "./pages/Docs";
 import { Landing } from "./pages/Landing";
@@ -21,6 +22,7 @@ function parseHash(h: string): { tab: Tab; sub?: string } {
 export default function App() {
   const [route, setRoute] = useState(() => parseHash(window.location.hash));
   const [copiedFooterCmd, setCopiedFooterCmd] = useState(false);
+  const [waitlistOpen, setWaitlistOpen] = useState(false);
   const [scrollY, setScrollY] = useState(0);
 
   useEffect(() => {
@@ -121,15 +123,15 @@ export default function App() {
             })}
           </nav>
 
-          {/* Right Playground CTA */}
+          {/* Right CTA: the waitlist (the hero and footer already link to the Playground) */}
           <div className="flex items-center gap-2.5">
             {!isPlayground ? (
               <button
                 type="button"
-                onClick={() => go("app")}
+                onClick={() => setWaitlistOpen(true)}
                 className="btn-soft hidden items-center gap-2 rounded-full bg-ink px-4 py-2 text-xs font-medium text-paper shadow-xs hover:opacity-90 sm:inline-flex sm:px-5"
               >
-                <span>Open Playground</span>
+                <span>Join waitlist</span>
                 <IconArrowRight size={14} />
               </button>
             ) : (
@@ -385,6 +387,7 @@ export default function App() {
           </div>
         </footer>
       )}
+      {waitlistOpen && <WaitlistModal onClose={() => setWaitlistOpen(false)} />}
     </div>
   );
 }

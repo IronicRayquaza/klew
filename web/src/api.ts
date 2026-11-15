@@ -145,6 +145,8 @@ export const api = {
     }),
   evalList: () => call<{ name: string; repo: string; scored: number }[]>("/api/eval"),
   evalOne: (name: string) => call<EvalResult>(`/api/eval/${encodeURIComponent(name)}`),
+  waitlist: (body: { name: string; email: string; repo_url: string; website: string }) =>
+    call<{ ok: boolean }>("/api/waitlist", { method: "POST", body: JSON.stringify(body) }),
   learning: () => call<import("./components/LearningCurve").LearningCurveData[]>("/api/learning"),
 };
 

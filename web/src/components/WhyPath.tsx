@@ -86,13 +86,13 @@ export function WhyPath({ steps, reason, path }: { steps: PathStep[]; reason?: s
 
   return (
     <div className="grid gap-3" aria-label="Why this file is in the pack">
-      <section className="grid gap-1.5">
+      <section data-tour="evidence" className="grid gap-1.5">
         <h4 className="font-mono text-[10px] tracking-wider text-muted uppercase">Evidence</h4>
         <Evidence items={evidence} />
       </section>
 
       {thread.length > 0 && (
-        <section className="grid gap-1.5">
+        <section data-tour="thread" className="grid gap-1.5">
           <h4 className="font-mono text-[10px] tracking-wider text-muted uppercase">
             Thread · {thread.length === 1 ? "direct" : `${thread.length - 1} hop${thread.length > 2 ? "s" : ""}`}
           </h4>

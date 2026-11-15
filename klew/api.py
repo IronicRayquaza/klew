@@ -3,8 +3,11 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import threading
 import time
+import urllib.error
+import urllib.request
 from collections import defaultdict, deque
 from pathlib import Path
 
@@ -176,6 +179,66 @@ def subgraph(run_id: int) -> Subgraph:
             if nodes[fid].kind != "seed":
                 nodes[fid].kind = "file"
     return Subgraph(nodes=list(nodes.values()), links=list(links.values()))
+
+
+# --- Waitlist: "use your own repo" sign-ups, emailed to the owner via Resend (https://resend.com) ---------------
+# RESEND_API_KEY and WAITLIST_TO (the owner's inbox) come from the environment, never from the repo.
+# WAITLIST_FROM defaults to Resend's shared sender, which can only deliver to the Resend account's own address.
+WAITLIST_PER_10MIN = int(os.environ.get("KLEW_WAITLIST_PER_10MIN", "3"))
+_wl_hits: dict[str, deque] = defaultdict(deque)
+_EMAIL = re.compile(r"^[^@\s<>]{1,64}@[^@\s<>]{1,190}\.[A-Za-z]{2,24}$")
+
+
+class WaitlistRequest(BaseModel):
+    name: str = Field(min_length=1, max_length=120)
+    email: str = Field(min_length=3, max_length=254)
+    repo_url: str = Field("", max_length=300)
+    website: str = Field("", max_length=200, description="Honeypot: real visitors leave this empty")
+
+
+def _send_waitlist_mail(req: WaitlistRequest, ip: str) -> None:
+    key, to = os.environ.get("RESEND_API_KEY", ""), os.environ.get("WAITLIST_TO", "")
+    if not key or not to:
+        raise HTTPException(503, "The waitlist isn't configured on this server yet.")
+    sender = os.environ.get("WAITLIST_FROM", "Klew waitlist <onboarding@resend.dev>")
+    lines = [f"Name: {req.name}", f"Email: {req.email}", f"Repo: {req.repo_url or '(not given)'}",
+             f"When: {time.strftime('%Y-%m-%d %H:%M:%S UTC', time.gmtime())}", f"From IP: {ip}"]
+    body = json.dumps({"from": sender, "to": [to], "reply_to": req.email,
+                       "subject": f"Klew waitlist: {req.name}", "text": "\n".join(lines)}).encode()
+    request = urllib.request.Request("https://api.resend.com/emails", data=body, method="POST", headers={
+        "Authorization": f"Bearer {key}", "Content-Type": "application/json", "User-Agent": "klew-waitlist/0.1"})
+    try:
+        with urllib.request.urlopen(request, timeout=15) as r:
+            if r.status >= 300:
+                raise HTTPException(502, "Couldn't send the sign-up. Please try again.")
+    except urllib.error.HTTPError as e:
+        raise HTTPException(502, "Couldn't send the sign-up. Please try again.") from e
+    except urllib.error.URLError as e:
+        raise HTTPException(502, "Couldn't reach the mail service. Please try again.") from e
+
+
+@app.post("/api/waitlist")
+def waitlist(req: WaitlistRequest, request: Request) -> dict:
+    ip = request.headers.get("x-forwarded-for", "").split(",")[0].strip() or (
+        request.client.host if request.client else "?")
+    if req.website:                       # bots fill every field; pretend it worked
+        return {"ok": True}
+    name, email = req.name.strip(), req.email.strip()
+    if not name or not _EMAIL.match(email):
+        raise HTTPException(422, "Please enter your name and a valid email address.")
+    repo = req.repo_url.strip()
+    if repo and not re.match(r"^(https?://)?[\w.-]+\.[a-z]{2,}(/\S*)?$", repo, re.I):
+        raise HTTPException(422, "That repository link doesn't look like a URL.")
+    now = time.monotonic()
+    with _hits_lock:
+        q = _wl_hits[ip]
+        while q and now - q[0] > 600:
+            q.popleft()
+        if len(q) >= WAITLIST_PER_10MIN:
+            raise HTTPException(429, "Too many sign-ups from here. Please try again later.")
+        q.append(now)
+    _send_waitlist_mail(WaitlistRequest(name=name, email=email, repo_url=repo), ip)
+    return {"ok": True}
 
 
 @app.get("/api/eval")
