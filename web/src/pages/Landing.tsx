@@ -36,41 +36,66 @@ export function Landing({ onTry, onResults, onDocs }: Props) {
   const [installTab, setInstallTab] = useState<"cli" | "mcp">("cli");
   const [copied, setCopied] = useState(false);
 
-  // Scroll expansion (90% -> 100% in first 100px without moving H1) + mouse hover parallax
-  const heroStageRef = useRef<HTMLElement>(null);
-  const [scrollYVal, setScrollYVal] = useState(0);
-  const [mouseOffset, setMouseOffset] = useState({ x: 0, y: 0 });
+  // Direct DOM refs for 60fps zero-glitch scroll expansion + mouse parallax
+  const imgFrameRef = useRef<HTMLDivElement>(null);
+  const imgElRef = useRef<HTMLImageElement>(null);
+  const mouseRef = useRef({ x: 0, y: 0 });
+  const scrollRef = useRef(0);
 
   useEffect(() => {
-    let rafId = 0;
-    const updateScroll = () => {
+    const EXPAND_DISTANCE = 180; // First 180px of scroll purely expands the image while H1 stays sticky at top:0
+
+    const applyTransforms = () => {
       const y = window.scrollY || window.pageYOffset || 0;
-      setScrollYVal(y);
+      scrollRef.current = y;
+
+      const expandP = Math.min(1, Math.max(0, y / EXPAND_DISTANCE));
+      // After image is 100% expanded (y > 180), apply gentle vertical parallax as the page scrolls
+      const parallaxY = Math.max(0, y - EXPAND_DISTANCE) * 0.08;
+
+      if (imgFrameRef.current) {
+        const padX = (1 - expandP) * 5; // 5vw -> 0vw (90% width -> 100% width)
+        const padTop = (1 - expandP) * 1.2; // minimal top inset so navbar sits over the image
+        const padBottom = (1 - expandP) * 6.5; // breathing bottom frame -> 0vh
+        const radius = Math.round(32 * (1 - expandP));
+        imgFrameRef.current.style.inset = `${padTop}vh ${padX}vw ${padBottom}vh ${padX}vw`;
+        imgFrameRef.current.style.borderRadius = `${radius}px`;
+      }
+
+      if (imgElRef.current) {
+        const mx = mouseRef.current.x * -20;
+        const my = mouseRef.current.y * -12 - Math.min(48, parallaxY);
+        imgElRef.current.style.transform = `translate3d(${mx}px, ${my}px, 0) scale(1.08)`;
+      }
     };
-    const onScroll = () => {
-      cancelAnimationFrame(rafId);
-      rafId = requestAnimationFrame(updateScroll);
-    };
-    updateScroll();
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => {
-      cancelAnimationFrame(rafId);
-      window.removeEventListener("scroll", onScroll);
-    };
+
+    applyTransforms();
+    window.addEventListener("scroll", applyTransforms, { passive: true });
+    return () => window.removeEventListener("scroll", applyTransforms);
   }, []);
 
   const handleHeroMouseMove = (e: React.MouseEvent<HTMLElement>) => {
     const rect = e.currentTarget.getBoundingClientRect();
     const nx = ((e.clientX - rect.left) / Math.max(1, rect.width) - 0.5) * 2;
     const ny = ((e.clientY - rect.top) / Math.max(1, rect.height) - 0.5) * 2;
-    setMouseOffset({
+    mouseRef.current = {
       x: Math.max(-1, Math.min(1, nx)),
       y: Math.max(-1, Math.min(1, ny)),
-    });
+    };
+    if (imgElRef.current) {
+      const parallaxY = Math.max(0, scrollRef.current - 180) * 0.08;
+      const mx = mouseRef.current.x * -20;
+      const my = mouseRef.current.y * -12 - Math.min(48, parallaxY);
+      imgElRef.current.style.transform = `translate3d(${mx}px, ${my}px, 0) scale(1.08)`;
+    }
   };
 
   const handleHeroMouseLeave = () => {
-    setMouseOffset({ x: 0, y: 0 });
+    mouseRef.current = { x: 0, y: 0 };
+    if (imgElRef.current) {
+      const parallaxY = Math.max(0, scrollRef.current - 180) * 0.08;
+      imgElRef.current.style.transform = `translate3d(0px, ${-Math.min(48, parallaxY)}px, 0) scale(1.08)`;
+    }
   };
 
   const activeEval =
@@ -112,44 +137,35 @@ klew context "Raise ReadTimeout when stream times out"`;
   }
 }`;
 
-  const EXPAND_PX = 100;
-  const expandProgress = Math.min(1, Math.max(0, scrollYVal / EXPAND_PX));
-  const holdOffset = Math.min(scrollYVal, EXPAND_PX);
-  const parallaxProgress = Math.min(1, Math.max(0, (scrollYVal - EXPAND_PX) / 500));
-
-  const frameSizePct = 90 + 10 * expandProgress;
-  const frameRadiusPx = Math.round(32 * (1 - expandProgress));
-
   return (
     <div className="w-full">
       {/* =====================================================================
           HERO STAGE - STICKY PARALLAX EXPANDING IMAGE (90% -> 100%) + GRAPH
          ===================================================================== */}
       <section
-        ref={heroStageRef}
         onMouseMove={handleHeroMouseMove}
         onMouseLeave={handleHeroMouseLeave}
         className="relative w-full"
       >
-        {/* Sticky Full-Screen Background Layer (starts at top:0 behind transparent navbar; expands 90% -> 100% in first 100px) */}
-        <div className="pointer-events-none sticky top-0 z-0 flex h-screen w-full items-center justify-center overflow-hidden">
+        {/* Layer A: Sticky Full-Screen Background Layer (pinned until LabyrinthHero finishes) */}
+        <div className="pointer-events-none sticky top-0 z-0 h-screen w-full overflow-hidden">
           <div
+            ref={imgFrameRef}
             style={{
-              width: `${frameSizePct}%`,
-              height: `${frameSizePct}%`,
-              borderRadius: `${frameRadiusPx}px`,
-              transition: "width 90ms ease-out, height 90ms ease-out, border-radius 90ms ease-out",
+              inset: "1.2vh 5vw 6.5vh 5vw",
+              borderRadius: "32px",
             }}
-            className="relative overflow-hidden border border-line/60 shadow-md will-change-transform"
+            className="absolute overflow-hidden border border-line/60 shadow-md will-change-[inset,border-radius]"
           >
             {/* Background Image with Mouse Hover Movement + Scroll Parallax */}
             <img
+              ref={imgElRef}
               src="/heroBg.webp"
               alt=""
               aria-hidden="true"
               style={{
-                transform: `translate3d(${mouseOffset.x * -22}px, ${mouseOffset.y * -14 - parallaxProgress * 36}px, 0) scale(1.09)`,
-                transition: "transform 200ms cubic-bezier(0.22, 1, 0.36, 1)",
+                transform: "translate3d(0px, 0px, 0) scale(1.08)",
+                transition: "transform 160ms cubic-bezier(0.22, 1, 0.36, 1)",
               }}
               className="h-full w-full object-cover object-center select-none will-change-transform"
             />
@@ -168,61 +184,58 @@ klew context "Raise ReadTimeout when stream times out"`;
           </div>
         </div>
 
-        {/* Foreground Content (Hero Copy + Labyrinth Graph) */}
+        {/* Layer B: Foreground Content (Hero Sticky Runway + Labyrinth Graph) */}
         <div className="relative z-10 -mt-[100vh]">
-          {/* Hero Headline & Actions: held stationary during the first 100px while the image expands */}
-          <div className="flex min-h-screen flex-col items-center justify-center px-frame pt-20 pb-12 text-center">
-            <div
-              style={{
-                transform: `translate3d(0, ${holdOffset}px, 0)`,
-              }}
-              className="mx-auto max-w-4xl will-change-transform"
-            >
-              <div className="inline-flex items-center rounded-full border border-line bg-card/90 px-4 py-1.5 font-mono text-xs text-ink shadow-2xs backdrop-blur-md">
-                <span>MCP Context Server for Coding Agents · Built on HydraDB</span>
-              </div>
+          {/* 180px Sticky Runway: H1 & hero content stay 100% motionless via native CSS sticky while image expands */}
+          <div className="relative h-[calc(100vh+180px)] w-full">
+            <div className="sticky top-0 flex h-screen w-full flex-col items-center justify-center px-frame pt-14 text-center">
+              <div className="mx-auto max-w-4xl">
+                <div className="inline-flex items-center rounded-full border border-line bg-card/90 px-4 py-1.5 font-mono text-xs text-ink shadow-2xs backdrop-blur-md">
+                  <span>MCP Context Server for Coding Agents · Built on HydraDB</span>
+                </div>
 
-              <h1 className="mt-7 font-display text-[clamp(2.6rem,5.2vw,4.6rem)] font-semibold leading-[1.04] tracking-[-0.03em] text-ink drop-shadow-2xs">
-                Your codebase is a labyrinth.{" "}
-                <span className="text-trail">Klew is the thread.</span>
-              </h1>
+                <h1 className="mt-7 font-display text-[clamp(2.6rem,5.2vw,4.6rem)] font-semibold leading-[1.04] tracking-[-0.03em] text-ink drop-shadow-2xs">
+                  Your codebase is a labyrinth.{" "}
+                  <span className="text-trail">Klew is the thread.</span>
+                </h1>
 
-              <p className="mx-auto mt-6 max-w-2xl text-lg leading-relaxed text-ink-soft sm:text-xl">
-                Klew maps your repository into a code graph in HydraDB, walks bounded structural paths
-                from a task, and returns a token-budgeted context pack with a{" "}
-                <strong className="font-semibold text-ink">why-path thread</strong> for every file -
-                learning which paths lead to merged code.
-              </p>
+                <p className="mx-auto mt-6 max-w-2xl text-lg leading-relaxed text-ink-soft sm:text-xl">
+                  Klew maps your repository into a code graph in HydraDB, walks bounded structural paths
+                  from a task, and returns a token-budgeted context pack with a{" "}
+                  <strong className="font-semibold text-ink">why-path thread</strong> for every file -
+                  learning which paths lead to merged code.
+                </p>
 
-              <div className="mt-9 flex flex-wrap items-center justify-center gap-3.5">
-                <button
-                  type="button"
-                  onClick={onTry}
-                  className="btn-soft inline-flex items-center gap-2.5 rounded-full bg-ink px-7 py-3.5 text-sm font-medium text-paper shadow-sm hover:bg-trail"
-                >
-                  <span>Explore the Playground</span>
-                  <span aria-hidden="true">→</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={onResults}
-                  className="btn-soft rounded-full border border-line bg-card/90 px-6 py-3.5 text-sm font-medium text-ink backdrop-blur-md hover:border-ink/40"
-                >
-                  View Held-Out Evidence
-                </button>
-                <button
-                  type="button"
-                  onClick={() => onDocs("quickstart")}
-                  className="btn-soft rounded-full bg-card/75 px-5 py-3.5 text-sm font-medium text-ink-soft backdrop-blur-md hover:text-ink"
-                >
-                  Read Docs
-                </button>
+                <div className="mt-9 flex flex-wrap items-center justify-center gap-3.5">
+                  <button
+                    type="button"
+                    onClick={onTry}
+                    className="btn-soft inline-flex items-center gap-2.5 rounded-full bg-ink px-7 py-3.5 text-sm font-medium text-paper shadow-sm hover:bg-trail"
+                  >
+                    <span>Explore the Playground</span>
+                    <span aria-hidden="true">→</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={onResults}
+                    className="btn-soft rounded-full border border-line bg-card/90 px-6 py-3.5 text-sm font-medium text-ink backdrop-blur-md hover:border-ink/40"
+                  >
+                    View Held-Out Evidence
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => onDocs("quickstart")}
+                    className="btn-soft rounded-full bg-card/75 px-5 py-3.5 text-sm font-medium text-ink-soft backdrop-blur-md hover:text-ink"
+                  >
+                    Read Docs
+                  </button>
+                </div>
               </div>
             </div>
           </div>
 
-          {/* Interactive Thread Canvas (rises over the expanded fixed hero image, then both scroll up together) */}
-          <div className="px-frame pt-28 pb-24 sm:pb-32">
+          {/* Interactive Thread Canvas (rises over the expanded fixed hero image after the 180px expansion runway) */}
+          <div className="px-frame pt-6 pb-24 sm:pb-32">
             <LabyrinthHero />
           </div>
         </div>

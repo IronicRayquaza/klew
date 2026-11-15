@@ -49,10 +49,7 @@ export default function App() {
   const tab = route.tab;
   const isPlayground = tab === "app";
   const isLanding = tab === "landing";
-  const navBlurred = scrollY > 320;
-  // On Landing at scroll=0, inset the transparent navbar slightly so it sits directly inside the 90% rounded hero image
-  const heroExpandP = isLanding ? Math.min(1, Math.max(0, scrollY / 100)) : 1;
-  const navTopPx = isLanding ? Math.round(28 * (1 - heroExpandP)) : 0;
+  const navBlurred = scrollY > 360;
 
   const copyInstallCmd = () => {
     navigator.clipboard?.writeText("pip install klew && klew hydra up");
@@ -68,13 +65,12 @@ export default function App() {
     >
       {/* Top Navigation (transparent on top of Hero image; slight blur later in page) */}
       <header
-        style={!isPlayground ? { top: `${navTopPx}px` } : undefined}
         className={`z-40 w-full transition-colors duration-300 ${
           isPlayground
             ? "sticky top-0 border-b border-line/70 bg-card/90 backdrop-blur-md px-5 sm:px-8"
-            : `fixed inset-x-0 px-frame ${
+            : `fixed top-0 inset-x-0 pt-3 px-frame ${
                 navBlurred
-                  ? "bg-paper/45 backdrop-blur-md border-b border-line/40"
+                  ? "bg-paper/45 backdrop-blur-md border-b border-line/40 pb-2"
                   : "bg-transparent"
               }`
         }`}
