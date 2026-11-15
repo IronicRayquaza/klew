@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import ForceGraph2D, { type ForceGraphMethods } from "react-force-graph-2d";
 import type { ContextPack } from "../api";
+import { IconMinus, IconPlus } from "./Icons";
 
 type N = {
   id: string;
@@ -265,7 +266,7 @@ export function PathGraph({
           title="Zoom in"
           aria-label="Zoom in"
         >
-          +
+          <IconPlus size={14} />
         </button>
         <button
           type="button"
@@ -274,7 +275,7 @@ export function PathGraph({
           title="Zoom out"
           aria-label="Zoom out"
         >
-          −
+          <IconMinus size={14} />
         </button>
         <button
           type="button"

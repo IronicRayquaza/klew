@@ -143,7 +143,7 @@ export function Curve({
                 stroke="var(--muted)"
                 strokeDasharray="4 4"
                 label={{
-                  value: "held-out starts →",
+                  value: "held-out starts",
                   position: "insideTopRight",
                   fontSize: 11,
                   fontFamily: "JetBrains Mono",

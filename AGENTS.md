@@ -139,6 +139,10 @@ Status: ✅ done · 🟡 in progress · ⬜ todo
   - Deploy check (demo image under 512 MB / 0.1 CPU, `PORT=10000` like Render): ready in 9 s, ~177 MB, a query
     ~9–10 s. `/api/stats` was taking ~70 s per call there (full graph scan) and the Playground calls it on load,
     so the demo now caches it (`KLEW_STATS_TTL`, off by default) and warms it at start. Added `.dockerignore`.
+  - Merged B's follow-ups (footer art, 4:3 card illustrations `card1-3.webp`, setup showcase, SVG icons in
+    `components/Icons.tsx`). Fixed on merge: the GitHub Action snippet used wrong inputs (`hydra_uri`, `repo`;
+    real: `hydra-uri`, `hydra-token`, optional `repo-key`), "index in under a second / ~0.9 s" → ~2 s (measured
+    today, incl. co-change mining), footer said Apache-2.0 but the project is MIT.
 - **2026-11-15 H18: confidence intervals, native MSpaths explain, hosted demo container.**
   - `klew/eval/stats.py`: paired bootstrap 95% CIs (2,000 resamples) for the key comparisons, stored as
     `ci_held_out` in every `eval/results/*.json` (`scripts/annotate_results.py`). Shown in the README ("Key

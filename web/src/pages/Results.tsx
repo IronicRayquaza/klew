@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { ARM_LABEL, type ArmSummary, type EvalResult } from "../api";
 import { Curve, type CurveMetric } from "../components/Curve";
+import { IconArrowRight } from "../components/Icons";
 import { LearningCurve } from "../components/LearningCurve";
 import { useEvalResults } from "../useEval";
 
@@ -130,9 +131,10 @@ export function Results({ onTry }: { onTry: () => void }) {
             <button
               type="button"
               onClick={onTry}
-              className="btn-soft rounded-full border border-line bg-card px-4 py-2 font-mono text-xs font-medium text-ink hover:border-ink/40"
+              className="btn-soft inline-flex items-center gap-1.5 rounded-full border border-line bg-card px-4 py-2 font-mono text-xs font-medium text-ink hover:border-ink/40"
             >
-              Open Playground →
+              <span>Open Playground</span>
+              <IconArrowRight size={13} />
             </button>
           </div>
         </div>

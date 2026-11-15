@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { IconArrowLeft, IconArrowRight, IconCheck, IconCopy } from "./components/Icons";
 import { Wordmark } from "./components/Logo";
 import { Dashboard } from "./pages/Dashboard";
 import { Docs } from "./pages/Docs";
@@ -49,7 +50,9 @@ export default function App() {
   const tab = route.tab;
   const isPlayground = tab === "app";
   const isLanding = tab === "landing";
-  const navBlurred = scrollY > 360;
+  const heroHeightThreshold =
+    typeof window !== "undefined" ? Math.round(window.innerHeight * 1.55) : 1350;
+  const navBlurred = isLanding ? scrollY > heroHeightThreshold : scrollY > 40;
 
   const copyInstallCmd = () => {
     navigator.clipboard?.writeText("pip install klew && klew hydra up");
@@ -63,14 +66,14 @@ export default function App() {
         isPlayground ? "h-screen overflow-hidden" : "min-h-screen overflow-x-clip"
       }`}
     >
-      {/* Top Navigation (transparent on top of Hero image; slight blur later in page) */}
+      {/* Top Navigation (transparent through entire Hero section; slight borderless blur after Hero is scrolled) */}
       <header
         className={`z-40 w-full transition-colors duration-300 ${
           isPlayground
-            ? "sticky top-0 border-b border-line/70 bg-card/90 backdrop-blur-md px-5 sm:px-8"
-            : `fixed top-0 inset-x-0 pt-3 px-frame ${
+            ? "sticky top-0 bg-card/90 backdrop-blur-md px-5 sm:px-8"
+            : `fixed top-0 inset-x-0 py-2.5 px-frame ${
                 navBlurred
-                  ? "bg-paper/45 backdrop-blur-md border-b border-line/40 pb-2"
+                  ? "bg-paper/55 backdrop-blur-md"
                   : "bg-transparent"
               }`
         }`}
@@ -127,7 +130,7 @@ export default function App() {
                 className="btn-soft inline-flex items-center gap-2 rounded-full bg-ink px-4 py-2 text-xs font-medium text-paper shadow-xs hover:opacity-90 sm:px-5"
               >
                 <span>Open Playground</span>
-                <span aria-hidden="true">→</span>
+                <IconArrowRight size={14} />
               </button>
             ) : (
               <button
@@ -135,7 +138,7 @@ export default function App() {
                 onClick={() => go("landing")}
                 className="btn-soft inline-flex items-center gap-2 rounded-full border border-line bg-card px-4 py-1.5 font-mono text-xs font-medium text-ink hover:bg-paper"
               >
-                <span aria-hidden="true">←</span>
+                <IconArrowLeft size={14} />
                 <span>Overview</span>
               </button>
             )}
@@ -165,7 +168,7 @@ export default function App() {
         {tab === "docs" && <Docs slug={route.sub} onNavigate={(s) => go("docs", s)} />}
       </main>
 
-      {/* Soft Architectural Card Footer over Full-Size Top-Masked footerBg1.webp */}
+      {/* Soft Architectural Card Footer over Full-Size Top-Masked footerBg2.webp */}
       {!isPlayground && (
         <footer className="relative mt-16 w-full overflow-hidden pt-28 pb-16">
           {/* Full-Size Background Image with Top Masked Blend into Page Paper */}
@@ -179,10 +182,10 @@ export default function App() {
             }}
           >
             <img
-              src="/footerBg1.webp"
+              src="/footerBg2.webp"
               alt=""
               aria-hidden="true"
-              className="h-full w-full object-cover object-left-bottom select-none"
+              className="h-full w-full object-cover object-center select-none"
             />
           </div>
 
@@ -210,8 +213,9 @@ export default function App() {
                   title="Copy install command"
                 >
                   <span>$ pip install klew &amp;&amp; klew hydra up</span>
-                  <span className="rounded-full bg-card px-2.5 py-0.5 text-[10px] font-medium text-muted">
-                    {copiedFooterCmd ? "Copied" : "Copy"}
+                  <span className="inline-flex items-center gap-1 rounded-full bg-card px-2.5 py-0.5 text-[10px] font-medium text-muted">
+                    {copiedFooterCmd ? <IconCheck size={11} /> : <IconCopy size={11} />}
+                    <span>{copiedFooterCmd ? "Copied" : "Copy"}</span>
                   </span>
                 </button>
                 <button
@@ -220,7 +224,7 @@ export default function App() {
                   className="btn-soft inline-flex items-center gap-2 rounded-full bg-ink px-5 py-2.5 text-xs font-medium text-paper hover:opacity-90"
                 >
                   <span>Open Playground</span>
-                  <span aria-hidden="true">→</span>
+                  <IconArrowRight size={14} />
                 </button>
               </div>
             </div>
@@ -366,7 +370,7 @@ export default function App() {
                     over Bolt.
                   </p>
                   <div className="mt-3 inline-block rounded-full border border-line bg-paper px-3 py-1 font-mono text-[11px] text-muted">
-                    Apache-2.0 License
+                    MIT License
                   </div>
                 </div>
               </div>
