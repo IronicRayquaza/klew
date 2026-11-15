@@ -1,0 +1,14 @@
+# Keep the build context to what the Dockerfiles copy; host node_modules would also break the Linux web build.
+.git
+.venv
+.vendor
+.klew
+**/node_modules
+web/dist
+dist
+**/__pycache__
+.pytest_cache
+.ruff_cache
+docs/img
+docs/social
+packages

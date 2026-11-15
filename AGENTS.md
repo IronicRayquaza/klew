@@ -136,6 +136,9 @@ Status: ✅ done · 🟡 in progress · ⬜ todo
   - Playground: offline mode no longer relabels a recorded pack with the typed task or simulates learning
     (teach and budget need `klew serve`); no hard-coded stats; graph rank labels come from the pack order
     (files met mid-path were showing another file's rank); defaults to httpx, which the example tasks are for.
+  - Deploy check (demo image under 512 MB / 0.1 CPU, `PORT=10000` like Render): ready in 9 s, ~177 MB, a query
+    ~9–10 s. `/api/stats` was taking ~70 s per call there (full graph scan) and the Playground calls it on load,
+    so the demo now caches it (`KLEW_STATS_TTL`, off by default) and warms it at start. Added `.dockerignore`.
 - **2026-11-15 H18: confidence intervals, native MSpaths explain, hosted demo container.**
   - `klew/eval/stats.py`: paired bootstrap 95% CIs (2,000 resamples) for the key comparisons, stored as
     `ci_held_out` in every `eval/results/*.json` (`scripts/annotate_results.py`). Shown in the README ("Key

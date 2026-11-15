@@ -89,9 +89,27 @@ def repos() -> list[dict]:
     return get_runtime().repos()
 
 
+# Stats scan the whole graph (~70 s on a 0.1-CPU free instance). The hosted demo caches them
+# (KLEW_STATS_TTL seconds); file and symbol counts only change on re-index. 0 = always fresh.
+STATS_TTL = float(os.environ.get("KLEW_STATS_TTL", "0"))
+_stats_cache: dict[str, tuple[float, GraphStats]] = {}
+_stats_lock = threading.Lock()
+
+
 @app.get("/api/stats", response_model=GraphStats)
 def stats(repo: str) -> GraphStats:
-    return get_runtime().stats(repo)
+    if STATS_TTL <= 0:
+        return get_runtime().stats(repo)
+    hit = _stats_cache.get(repo)
+    if hit and time.monotonic() - hit[0] < STATS_TTL:
+        return hit[1]
+    with _stats_lock:   # one scan at a time; concurrent callers reuse its result
+        hit = _stats_cache.get(repo)
+        if hit and time.monotonic() - hit[0] < STATS_TTL:
+            return hit[1]
+        out = get_runtime().stats(repo)
+        _stats_cache[repo] = (time.monotonic(), out)
+        return out
 
 
 @app.post("/api/context", response_model=ContextPack)

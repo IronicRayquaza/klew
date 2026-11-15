@@ -28,6 +28,6 @@ COPY eval/results/ eval/results/
 COPY --from=web /web/dist web/dist
 COPY deploy/demo-start.sh /opt/klew/demo-start.sh
 RUN chmod +x /opt/klew/demo-start.sh
-ENV KLEW_WEB_DIR=/opt/klew/app/web/dist KLEW_RESULTS_DIR=/opt/klew/app/eval/results KLEW_RATE_PER_MIN=30 PORT=7860 KLEW_DEMO=1
+ENV KLEW_WEB_DIR=/opt/klew/app/web/dist KLEW_RESULTS_DIR=/opt/klew/app/eval/results KLEW_RATE_PER_MIN=30 KLEW_STATS_TTL=21600 PORT=7860 KLEW_DEMO=1
 EXPOSE 7860
 ENTRYPOINT ["/opt/klew/demo-start.sh"]

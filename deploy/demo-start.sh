@@ -13,6 +13,8 @@ SERVE=$!
     curl -s -o /dev/null -X POST "http://127.0.0.1:${PORT:-7860}/api/context" -H 'Content-Type: application/json' \
       -d "{\"repo\": \"$repo\", \"task\": \"warm up the engine\", \"budget_tokens\": 500}"
   done
+  # Fill the stats cache (KLEW_STATS_TTL) now, so no visitor waits for a full graph scan.
+  for repo in httpx flask; do curl -s -o /dev/null "http://127.0.0.1:${PORT:-7860}/api/stats?repo=$repo"; done
 ) &
 # Exit (so the platform restarts us) only if HydraDB or the API dies, not when the warm-up finishes.
 wait -n $NODE $SERVE
