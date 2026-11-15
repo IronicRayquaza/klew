@@ -34,7 +34,7 @@ const MYTH_CARDS = [
     eyebrow: "The Desire Path",
     mythFrom: "Myth: Worn Trail",
     klewTo: "Klew: Continual Learning",
-    title: "Paths that grow stronger with every merged\u00a0PR",
+    title: "Paths that get stronger with every merged\u00a0PR",
     body: "After an agent run or merged PR, record_outcome reinforces the paths that led to the files that actually changed and gently decays served misses. Structural facts stay untouched, so re-indexing never erases experience.",
     image: "/card3.webp",
   },
