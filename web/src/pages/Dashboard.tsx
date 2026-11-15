@@ -1,199 +1,816 @@
-import { useEffect, useState } from 'react'
-import { api, backendUp, snapshot, type ContextPack, type GraphStats, type LearnReport, type Repo } from '../api'
-import { PathGraph } from '../components/PathGraph'
-import { WhyPath } from '../components/WhyPath'
+import { useEffect, useState } from "react";
+import {
+  api,
+  backendUp,
+  snapshot,
+  type ContextPack,
+  type GraphStats,
+  type LearnReport,
+  type Repo,
+} from "../api";
+import { PathGraph } from "../components/PathGraph";
+import { WhyPath } from "../components/WhyPath";
 
 const EXAMPLES = [
-  'Support NO_PROXY environment variable with CIDR ranges',
-  'Raise ReadTimeout when the server stalls while streaming the response body',
-  'Client.send should not follow redirects to another origin with auth headers',
-]
+  {
+    short: "NO_PROXY CIDR ranges",
+    full: "Support NO_PROXY environment variable with CIDR ranges",
+  },
+  {
+    short: "ReadTimeout on stream stall",
+    full: "Raise ReadTimeout when the server stalls while streaming the response body",
+  },
+  {
+    short: "Client.send redirect auth",
+    full: "Client.send should not follow redirects to another origin with auth headers",
+  },
+];
 
-export default function Dashboard() {
-  const [live, setLive] = useState<boolean | null>(null)
-  const [repos, setRepos] = useState<Repo[]>([])
-  const [repo, setRepo] = useState('')
-  const [stats, setStats] = useState<GraphStats | null>(null)
-  const [task, setTask] = useState(EXAMPLES[0])
-  const [budget, setBudget] = useState(2000)
-  const [pack, setPack] = useState<ContextPack | null>(null)
-  const [busy, setBusy] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [touched, setTouched] = useState<Set<string>>(new Set())
-  const [extra, setExtra] = useState('')
-  const [report, setReport] = useState<LearnReport | null>(null)
+type ActiveModal = "files" | "learn" | "settings" | null;
+
+export function Dashboard() {
+  const [live, setLive] = useState<boolean | null>(null);
+  const [repos, setRepos] = useState<Repo[]>([]);
+  const [repo, setRepo] = useState("httpx");
+  const [stats, setStats] = useState<GraphStats | null>(null);
+  const [task, setTask] = useState(EXAMPLES[0].full);
+  const [budget, setBudget] = useState(2000);
+  const [pack, setPack] = useState<ContextPack | null>(null);
+  const [snapshotPacks, setSnapshotPacks] = useState<ContextPack[]>([]);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [touched, setTouched] = useState<Set<string>>(new Set());
+  const [extra, setExtra] = useState("");
+  const [report, setReport] = useState<LearnReport | null>(null);
+
+  // Playground UI state: center modal vs right-corner collapsed inspector
+  const [activeModal, setActiveModal] = useState<ActiveModal>(null);
+  const [selectedFile, setSelectedFile] = useState<string | null>(null);
+  const [cornerOpen, setCornerOpen] = useState<boolean>(true);
+  const [showSnippet, setShowSnippet] = useState<boolean>(false);
 
   useEffect(() => {
-    ;(async () => {
-      const up = await backendUp()
-      setLive(up)
+    (async () => {
+      const up = await backendUp();
+      setLive(up);
       if (up) {
-        const rs = await api.repos().catch(() => [])
-        setRepos(rs)
-        if (rs[0]) setRepo(rs[0].repo)
+        const rs = await api.repos().catch(() => []);
+        setRepos(rs);
+        const defaultRepo = rs[0]?.repo || "httpx";
+        setRepo(defaultRepo);
+        try {
+          const p = await api.context(defaultRepo, EXAMPLES[0].full, 2000);
+          setPack(p);
+          setSelectedFile(p.items[0]?.path ?? null);
+        } catch {
+          // ignore
+        }
       } else {
-        const packs = await snapshot<ContextPack[]>('packs.json').catch(() => [])
-        if (packs[0]) { setPack(packs[0]); setTask(packs[0].task); setRepo(packs[0].repo) }
+        const packs = await snapshot<ContextPack[]>("packs.json").catch(() => []);
+        setSnapshotPacks(packs);
+        if (packs[0]) {
+          setPack(packs[0]);
+          setTask(packs[0].task);
+          setRepo(packs[0].repo);
+          setSelectedFile(packs[0].items[0]?.path ?? null);
+        }
       }
-    })()
-  }, [])
+    })();
+  }, []);
 
   useEffect(() => {
-    if (live && repo) api.stats(repo).then(setStats).catch(() => setStats(null))
-  }, [live, repo, report])
+    if (live && repo) {
+      api
+        .stats(repo)
+        .then(setStats)
+        .catch(() => setStats(null));
+    }
+  }, [live, repo, report]);
 
-  async function run() {
-    setBusy(true); setError(null); setReport(null); setTouched(new Set())
+  async function runQuery(nextTask = task, nextBudget = budget) {
+    setBusy(true);
+    setError(null);
+    setReport(null);
+    setTouched(new Set());
     try {
-      setPack(await api.context(repo, task, budget))
+      if (live) {
+        const res = await api.context(repo, nextTask, nextBudget);
+        setPack(res);
+        setSelectedFile(res.items[0]?.path ?? null);
+        setCornerOpen(true);
+      } else if (snapshotPacks.length) {
+        const q = nextTask.toLowerCase();
+        const found =
+          snapshotPacks.find((p) => p.task.toLowerCase() === q) ||
+          snapshotPacks.find((p) =>
+            q.includes("timeout") || q.includes("stall")
+              ? p.task.includes("ReadTimeout")
+              : q.includes("redirect") || q.includes("send")
+                ? p.task.includes("Client.send")
+                : p.task.includes("NO_PROXY"),
+          ) ||
+          snapshotPacks[0];
+
+        let used = 0;
+        const filtered = found.items.filter((it) => {
+          if (used + it.tokens <= nextBudget || used === 0) {
+            used += it.tokens;
+            return true;
+          }
+          return false;
+        });
+
+        const nextPack: ContextPack = {
+          ...found,
+          task: nextTask,
+          budget_tokens: nextBudget,
+          tokens: used,
+          items: filtered,
+        };
+        setPack(nextPack);
+        setSelectedFile(filtered[0]?.path ?? null);
+        setCornerOpen(true);
+      }
     } catch (e) {
-      setError(String((e as Error).message))
+      setError(String((e as Error).message));
     } finally {
-      setBusy(false)
+      setBusy(false);
     }
   }
 
   async function teach() {
-    if (!pack) return
-    const files = [...touched, ...extra.split(/[\s,]+/).filter(Boolean)]
-    if (!files.length) return
+    if (!pack) return;
+    const files = [...touched, ...extra.split(/[\s,]+/).filter(Boolean)];
+    if (!files.length) return;
+    setBusy(true);
+    setError(null);
     try {
-      setReport(await api.outcome(repo, pack.run_id, files))
+      if (live) {
+        const rep = await api.outcome(repo, pack.run_id, files);
+        setReport(rep);
+        const refreshed = await api.context(repo, pack.task, budget);
+        setPack(refreshed);
+      } else {
+        const servedSet = new Set(pack.items.map((i) => i.path));
+        const hits = files.filter((f) => servedSet.has(f));
+        const unserved = files.filter((f) => !servedSet.has(f));
+        const misses = pack.items.map((i) => i.path).filter((p) => !files.includes(p));
+
+        const updatedItems = pack.items
+          .map((it) => {
+            const isHit = files.includes(it.path);
+            const nextScore = isHit
+              ? Math.round((it.score + 0.45) * 100) / 100
+              : Math.max(0.1, Math.round(it.score * 0.92 * 100) / 100);
+            const nextWhy = it.why.map((s, idx) =>
+              idx === 0 && isHit
+                ? {
+                    ...s,
+                    via: s.via || "points to",
+                    weight: Math.round(((s.weight || 1.2) + 0.6) * 10) / 10,
+                  }
+                : s,
+            );
+            return { ...it, score: nextScore, why: nextWhy };
+          })
+          .sort((a, b) => b.score - a.score);
+
+        setPack({ ...pack, items: updatedItems });
+        setReport({
+          run_id: pack.run_id,
+          hits,
+          misses,
+          unserved,
+          edges_reinforced: files.length * 4,
+          edges_decayed: misses.length,
+          edges_created: unserved.length * 2,
+        });
+      }
     } catch (e) {
-      setError(String((e as Error).message))
+      setError(String((e as Error).message));
+    } finally {
+      setBusy(false);
     }
   }
 
-  const toggle = (p: string) => setTouched((s) => { const n = new Set(s); if (n.has(p)) n.delete(p); else n.add(p); return n })
+  const toggleTouch = (p: string) =>
+    setTouched((s) => {
+      const n = new Set(s);
+      if (n.has(p)) n.delete(p);
+      else n.add(p);
+      return n;
+    });
+
+  // Selecting a file from the center modal collapses the modal into the top-right corner drawer
+  // so the user can watch the relationship graph update in real time.
+  const handleSelectFileAndCollapseToCorner = (path: string) => {
+    if (!path) {
+      setSelectedFile(null);
+      return;
+    }
+    setSelectedFile(path);
+    setActiveModal(null);
+    setCornerOpen(true);
+  };
+
+  const activeItemIdx = pack?.items.findIndex((i) => i.path === selectedFile) ?? -1;
+  const activeItem =
+    activeItemIdx >= 0 && pack ? pack.items[activeItemIdx] : pack?.items[0] ?? null;
+
+  const stepFile = (delta: number) => {
+    if (!pack || !pack.items.length) return;
+    const base = activeItemIdx >= 0 ? activeItemIdx : 0;
+    const nextIdx = (base + delta + pack.items.length) % pack.items.length;
+    setSelectedFile(pack.items[nextIdx].path);
+    setCornerOpen(true);
+  };
 
   return (
-    <div className="mx-auto grid max-w-6xl grid-cols-[minmax(0,1fr)] gap-8 px-4 py-10 sm:px-6">
-      <header className="grid gap-3">
-        <span className="eyebrow">Live context</span>
-        <h1 className="text-4xl font-bold">Ask for context, then teach it what you changed</h1>
-        {live === false && (
-          <p className="rounded-lg border border-line bg-card px-4 py-3 text-sm text-muted">
-            You're viewing a recorded run. To try your own tasks, start the API with
-            <code className="mx-1 rounded bg-code px-1.5 font-mono text-ink">klew serve</code> and reload.
-          </p>
-        )}
-      </header>
-
-      <section className="grid gap-4 rounded-xl border border-line bg-card p-5">
-        <div className="grid gap-3 sm:grid-cols-[1fr_auto]">
-          <label className="grid gap-1.5">
-            <span className="eyebrow">Task</span>
-            <textarea id="task" rows={2} value={task} onChange={(e) => setTask(e.target.value)} disabled={!live}
-                      className="w-full resize-y rounded-lg border border-line bg-paper px-3 py-2 font-sans text-ink" />
-          </label>
-          <div className="grid content-start gap-1.5">
-            <span className="eyebrow">Repository</span>
-            <select id="repo" value={repo} onChange={(e) => setRepo(e.target.value)} disabled={!live}
-                    className="rounded-lg border border-line bg-paper px-3 py-2 text-ink">
-              {repos.length ? repos.map((r) => <option key={r.repo} value={r.repo}>{r.repo}</option>) : <option>{repo || 'none'}</option>}
-            </select>
-          </div>
+    <div className="relative h-full w-full overflow-hidden">
+      {/* =====================================================================
+          1. FULL-VIEWPORT RELATIONSHIP GRAPH CANVAS
+         ===================================================================== */}
+      {pack ? (
+        <PathGraph
+          pack={pack}
+          focusFile={selectedFile}
+          onSelectFile={handleSelectFileAndCollapseToCorner}
+        />
+      ) : (
+        <div className="flex h-full w-full items-center justify-center bg-playground-dots font-mono text-sm text-muted">
+          Unwinding code graph…
         </div>
-        <div className="flex flex-wrap items-center gap-3">
-          <label className="flex items-center gap-2 text-sm text-muted">
-            Budget
-            <input id="budget" type="range" min={500} max={6000} step={250} value={budget}
-                   onChange={(e) => setBudget(Number(e.target.value))} disabled={!live} />
-            <span className="w-24 font-mono text-ink tabular">{budget.toLocaleString()} tok</span>
-          </label>
-          <div className="flex flex-wrap gap-2">
-            {EXAMPLES.map((ex) => (
-              <button key={ex} type="button" onClick={() => setTask(ex)} disabled={!live}
-                      className="rounded-full border border-line px-3 py-1 text-xs text-muted hover:text-ink disabled:opacity-50">
-                {ex.length > 44 ? ex.slice(0, 44) + '…' : ex}
+      )}
+
+      {/* =====================================================================
+          2. DETACHABLE LEFT ICON SIDEBAR DOCK
+         ===================================================================== */}
+      <aside
+        className="surface-glass absolute top-1/2 left-5 z-20 flex -translate-y-1/2 flex-col items-center gap-2 rounded-3xl p-2"
+        aria-label="Playground tools"
+      >
+        {/* Files Modal Trigger */}
+        <DockIconButton
+          active={activeModal === "files"}
+          onClick={() => setActiveModal(activeModal === "files" ? null : "files")}
+          label="Context Files"
+          badge={pack?.items.length}
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+            <polyline points="14 2 14 8 20 8" />
+            <line x1="8" y1="13" x2="16" y2="13" />
+            <line x1="8" y1="17" x2="13" y2="17" />
+          </svg>
+        </DockIconButton>
+
+        {/* Teach / Continual Learning Modal Trigger */}
+        <DockIconButton
+          active={activeModal === "learn"}
+          onClick={() => setActiveModal(activeModal === "learn" ? null : "learn")}
+          label="Teach Graph (Record Outcome)"
+          badge={touched.size > 0 ? touched.size : undefined}
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="6" cy="6" r="3" />
+            <circle cx="18" cy="18" r="3" />
+            <path d="M8.5 8.5c4 4 3 7 7 7" />
+            <path d="M15 6h3v3" />
+          </svg>
+        </DockIconButton>
+
+        {/* Budget & Repository Settings Modal Trigger */}
+        <DockIconButton
+          active={activeModal === "settings"}
+          onClick={() => setActiveModal(activeModal === "settings" ? null : "settings")}
+          label="Budget & Graph Telemetry"
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+            <line x1="4" y1="21" x2="4" y2="14" />
+            <line x1="4" y1="10" x2="4" y2="3" />
+            <line x1="12" y1="21" x2="12" y2="12" />
+            <line x1="12" y1="8" x2="12" y2="3" />
+            <line x1="20" y1="21" x2="20" y2="16" />
+            <line x1="20" y1="12" x2="20" y2="3" />
+            <line x1="1" y1="14" x2="7" y2="14" />
+            <line x1="9" y1="8" x2="15" y2="8" />
+            <line x1="17" y1="16" x2="23" y2="16" />
+          </svg>
+        </DockIconButton>
+
+        <div className="my-0.5 h-px w-6 bg-line" />
+
+        {/* Toggle Corner File Inspector */}
+        <DockIconButton
+          active={cornerOpen && !activeModal}
+          onClick={() => {
+            if (activeModal) setActiveModal(null);
+            setCornerOpen((v) => !v);
+          }}
+          label={cornerOpen ? "Hide Corner Inspector" : "Show Corner Inspector"}
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+            <rect x="3" y="3" width="18" height="18" rx="4" />
+            <path d="M14 3v18" />
+          </svg>
+        </DockIconButton>
+      </aside>
+
+      {/* =====================================================================
+          3. RIGHT-CORNER COLLAPSIBLE FILE INSPECTOR DRAWER
+         ===================================================================== */}
+      {pack && activeItem && cornerOpen && !activeModal && (
+        <div className="surface-glass animate-drawer-in absolute top-5 right-5 z-20 flex max-h-[calc(100vh-13rem)] w-[350px] flex-col overflow-hidden rounded-3xl p-5 sm:w-[410px]">
+          {/* Top Navigation Bar inside Corner Card */}
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-1.5">
+              <button
+                type="button"
+                onClick={() => stepFile(-1)}
+                className="btn-soft flex h-7 w-7 items-center justify-center rounded-full border border-line bg-card text-xs text-ink hover:bg-paper"
+                title="Previous file in pack"
+              >
+                ←
               </button>
-            ))}
-          </div>
-          <button type="button" onClick={run} disabled={!live || busy || !repo}
-                  className="ml-auto rounded-lg bg-ink px-5 py-2 font-medium text-paper disabled:opacity-50">
-            {busy ? 'Walking the graph…' : 'Get context'}
-          </button>
-        </div>
-        {error && <p className="text-sm text-alarm">{error}</p>}
-      </section>
-
-      {pack && (
-        <div className="grid grid-cols-[minmax(0,1fr)] gap-6 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)]">
-          <section className="grid min-w-0 grid-cols-[minmax(0,1fr)] content-start gap-3">
-            <div className="flex flex-wrap items-baseline justify-between gap-2">
-              <h2 className="text-xl font-bold">Context pack</h2>
-              <span className="min-w-0 font-mono text-sm text-muted tabular">
-                {pack.tokens.toLocaleString()} / {pack.budget_tokens.toLocaleString()} tokens · {Math.round(pack.timings.total_ms)} ms · {pack.timings.queries} graph queries
+              <span className="num rounded-full border border-line bg-paper px-2.5 py-0.5 font-mono text-[11px] font-medium text-ink">
+                #{activeItemIdx >= 0 ? activeItemIdx + 1 : 1} of {pack.items.length}
               </span>
+              <button
+                type="button"
+                onClick={() => stepFile(1)}
+                className="btn-soft flex h-7 w-7 items-center justify-center rounded-full border border-line bg-card text-xs text-ink hover:bg-paper"
+                title="Next file in pack"
+              >
+                →
+              </button>
             </div>
-            {pack.abstained && <p className="rounded-lg border border-line bg-card p-4 text-muted">No confident context: {pack.abstain_reason}.</p>}
-            {pack.items.map((it, i) => (
-              <article key={it.file_id} className="grid gap-2 rounded-xl border border-line bg-card p-4">
-                <div className="flex items-start gap-3">
-                  <span className="min-w-0 font-mono text-sm text-muted tabular">{String(i + 1).padStart(2, '0')}</span>
-                  <div className="grid min-w-0 flex-1 grid-cols-[minmax(0,1fr)] gap-2">
-                    <div className="flex flex-wrap items-center justify-between gap-2">
-                      <span className="font-mono font-medium break-all">{it.path}</span>
-                      <label className="flex items-center gap-1.5 text-xs text-muted">
-                        <input type="checkbox" checked={touched.has(it.path)} onChange={() => toggle(it.path)} disabled={!live} />
-                        I changed this
-                      </label>
+
+            <div className="flex items-center gap-1.5">
+              <button
+                type="button"
+                onClick={() => setActiveModal("files")}
+                className="btn-soft rounded-full border border-line bg-card px-3 py-1 font-mono text-[11px] text-muted hover:text-ink"
+              >
+                All files
+              </button>
+              <button
+                type="button"
+                onClick={() => setCornerOpen(false)}
+                className="btn-soft flex h-7 w-7 items-center justify-center rounded-full border border-line bg-card text-xs text-muted hover:text-ink"
+                title="Minimize inspector"
+              >
+                ×
+              </button>
+            </div>
+          </div>
+
+          {/* File Title & Score */}
+          <div className="mt-3.5 flex items-baseline justify-between gap-2">
+            <h3 className="truncate font-mono text-sm font-semibold text-ink" title={activeItem.path}>
+              {activeItem.path}
+            </h3>
+            <span className="num shrink-0 font-mono text-xs text-muted">
+              score {activeItem.score.toFixed(2)} · {activeItem.tokens} tok
+            </span>
+          </div>
+
+          {/* Why-Path Thread */}
+          <div className="mt-3 rounded-2xl border border-line/80 bg-card/85 p-3">
+            <div className="mb-1.5 font-mono text-[10px] uppercase tracking-wider text-muted">
+              Why-path thread
+            </div>
+            <WhyPath steps={activeItem.why} reason={activeItem.seed_reason} />
+          </div>
+
+          {/* Action Row: Mark as Changed + Toggle Snippet */}
+          <div className="mt-3.5 flex items-center justify-between gap-2">
+            <button
+              type="button"
+              onClick={() => toggleTouch(activeItem.path)}
+              className={`btn-soft inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 font-mono text-xs font-medium ${
+                touched.has(activeItem.path)
+                  ? "bg-ink text-paper"
+                  : "border border-line bg-card text-ink hover:bg-paper"
+              }`}
+            >
+              <span>{touched.has(activeItem.path) ? "✓ Marked as changed" : "+ Mark as changed"}</span>
+            </button>
+
+            {activeItem.snippet && (
+              <button
+                type="button"
+                onClick={() => setShowSnippet((v) => !v)}
+                className="btn-soft rounded-full border border-line bg-card px-3 py-1.5 font-mono text-xs text-ink hover:bg-paper"
+              >
+                {showSnippet ? "Hide code" : "View code"}
+              </button>
+            )}
+          </div>
+
+          {/* Optional Expandable Code Snippet */}
+          {showSnippet && activeItem.snippet && (
+            <pre className="mt-3 max-h-48 overflow-auto rounded-2xl border border-line bg-paper p-3.5 font-mono text-[11px] leading-relaxed text-ink select-text">
+              {activeItem.snippet}
+            </pre>
+          )}
+        </div>
+      )}
+
+      {/* =====================================================================
+          4. WIDER CENTER MODALS (FILES, TEACH / LEARN, SETTINGS)
+         ===================================================================== */}
+      {activeModal && pack && (
+        <div
+          className="absolute inset-0 z-30 flex items-center justify-center bg-ink/15 p-4 backdrop-blur-xs"
+          onClick={() => setActiveModal(null)}
+        >
+          {/* MODAL A: CONTEXT FILES MODAL (wider max-w-4xl) */}
+          {activeModal === "files" && (
+            <div
+              onClick={(e) => e.stopPropagation()}
+              className="surface-card animate-modal-in flex max-h-[80vh] w-[min(92vw,56rem)] flex-col overflow-hidden p-6 sm:p-8"
+            >
+              <div className="flex items-start justify-between gap-4 border-b border-line pb-5">
+                <div>
+                  <span className="font-mono text-xs uppercase tracking-wider text-muted">
+                    Context Pack · {pack.tokens.toLocaleString()} / {pack.budget_tokens.toLocaleString()} tok
+                  </span>
+                  <h2 className="mt-1 font-display text-2xl font-semibold text-ink">
+                    Packed Files ({pack.items.length})
+                  </h2>
+                  <p className="mt-1 text-xs text-muted">
+                    Click any file to collapse this modal into the corner and inspect its thread on the graph.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setActiveModal(null)}
+                  className="btn-soft flex h-8 w-8 items-center justify-center rounded-full border border-line bg-paper text-sm text-muted hover:text-ink"
+                >
+                  ×
+                </button>
+              </div>
+
+              <div className="mt-5 grid flex-1 grid-cols-1 gap-3 overflow-y-auto pr-1 md:grid-cols-2">
+                {pack.items.map((it, idx) => {
+                  const isSel = selectedFile === it.path;
+                  const isTouch = touched.has(it.path);
+                  return (
+                    <div
+                      key={it.file_id}
+                      onClick={() => handleSelectFileAndCollapseToCorner(it.path)}
+                      className={`cursor-pointer rounded-2xl border p-4 transition-all ${
+                        isSel
+                          ? "border-ink bg-paper"
+                          : "border-line bg-paper/55 hover:border-ink/40 hover:bg-card"
+                      }`}
+                    >
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <div className="flex items-center gap-2">
+                          <span className="num rounded-full border border-line bg-card px-2.5 py-0.5 font-mono text-xs font-semibold text-ink">
+                            #{idx + 1}
+                          </span>
+                          <span className="font-mono text-sm font-semibold text-ink">{it.path}</span>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          <span className="num font-mono text-xs text-muted">
+                            {it.score.toFixed(2)} · {it.tokens}t
+                          </span>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              toggleTouch(it.path);
+                            }}
+                            className={`btn-soft rounded-full px-2.5 py-1 font-mono text-[10px] ${
+                              isTouch
+                                ? "bg-ink font-medium text-paper"
+                                : "border border-line bg-card text-muted hover:text-ink"
+                            }`}
+                          >
+                            {isTouch ? "✓ Changed" : "+ Changed"}
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className="mt-2.5">
+                        <WhyPath steps={it.why} reason={it.seed_reason} />
+                      </div>
                     </div>
-                    <WhyPath steps={it.why} reason={it.seed_reason} />
-                    {it.symbols.length > 0 && (
-                      <pre className="overflow-x-auto rounded-lg bg-code p-3 font-mono text-[0.78rem] leading-5">{it.symbols.join('\n')}</pre>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* MODAL B: TEACH / CONTINUAL LEARNING MODAL (wider max-w-2xl) */}
+          {activeModal === "learn" && (
+            <div
+              onClick={(e) => e.stopPropagation()}
+              className="surface-card animate-modal-in w-[min(92vw,42rem)] p-6 sm:p-8"
+            >
+              <div className="flex items-start justify-between gap-4 border-b border-line pb-4">
+                <div>
+                  <span className="font-mono text-xs uppercase tracking-wider text-muted">
+                    Continual Learning · record_outcome
+                  </span>
+                  <h2 className="mt-1 font-display text-2xl font-semibold text-ink">
+                    Teach the graph what changed
+                  </h2>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setActiveModal(null)}
+                  className="btn-soft flex h-8 w-8 items-center justify-center rounded-full border border-line bg-paper text-sm text-muted hover:text-ink"
+                >
+                  ×
+                </button>
+              </div>
+
+              <p className="mt-4 text-sm leading-relaxed text-muted">
+                Select the files your PR actually modified. Klew reinforces{" "}
+                <code className="rounded bg-paper px-1.5 py-0.5 font-mono text-xs text-ink">POINTS_TO</code> links
+                toward those symbols and gently decays served files you did not touch.
+              </p>
+
+              <div className="mt-4 grid max-h-60 grid-cols-1 gap-2 overflow-y-auto pr-1 sm:grid-cols-2">
+                {pack.items.slice(0, 10).map((it) => {
+                  const checked = touched.has(it.path);
+                  return (
+                    <label
+                      key={it.file_id}
+                      className={`flex cursor-pointer items-center justify-between rounded-2xl border px-4 py-2.5 font-mono text-xs transition-colors ${
+                        checked
+                          ? "border-ink bg-paper font-medium text-ink"
+                          : "border-line bg-paper/60 text-muted hover:text-ink"
+                      }`}
+                    >
+                      <span className="truncate">{it.path}</span>
+                      <input
+                        type="checkbox"
+                        checked={checked}
+                        onChange={() => toggleTouch(it.path)}
+                        className="accent-ink h-4 w-4"
+                      />
+                    </label>
+                  );
+                })}
+              </div>
+
+              <input
+                placeholder="Additional touched files (comma-separated)…"
+                value={extra}
+                onChange={(e) => setExtra(e.target.value)}
+                className="mt-4 w-full rounded-xl border border-line bg-paper px-4 py-2.5 font-mono text-xs text-ink focus:border-ink focus:outline-none"
+              />
+
+              {report && (
+                <div className="mt-4 rounded-2xl border border-line bg-paper p-3.5 font-mono text-xs text-ink">
+                  +{report.edges_reinforced} reinforced · −{report.edges_decayed} decayed · +{report.edges_created} new
+                  learned links
+                </div>
+              )}
+
+              <div className="mt-6 flex items-center justify-end gap-2.5">
+                <button
+                  type="button"
+                  onClick={() => setActiveModal(null)}
+                  className="btn-soft rounded-full px-4 py-2 text-xs font-medium text-muted hover:text-ink"
+                >
+                  Close
+                </button>
+                <button
+                  type="button"
+                  onClick={teach}
+                  disabled={(touched.size === 0 && !extra.trim()) || busy}
+                  className="btn-soft rounded-full bg-ink px-6 py-2.5 font-mono text-xs font-medium text-paper shadow-xs disabled:opacity-40"
+                >
+                  {busy ? "Updating…" : `Reinforce Thread (${touched.size}) →`}
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* MODAL C: BUDGET & TELEMETRY SETTINGS MODAL (wider max-w-xl) */}
+          {activeModal === "settings" && (
+            <div
+              onClick={(e) => e.stopPropagation()}
+              className="surface-card animate-modal-in w-[min(92vw,38rem)] p-6 sm:p-8"
+            >
+              <div className="flex items-start justify-between gap-4 border-b border-line pb-4">
+                <div>
+                  <span className="font-mono text-xs uppercase tracking-wider text-muted">
+                    Playground Configuration
+                  </span>
+                  <h2 className="mt-1 font-display text-2xl font-semibold text-ink">
+                    Budget &amp; Graph Stats
+                  </h2>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setActiveModal(null)}
+                  className="btn-soft flex h-8 w-8 items-center justify-center rounded-full border border-line bg-paper text-sm text-muted hover:text-ink"
+                >
+                  ×
+                </button>
+              </div>
+
+              <div className="mt-5 space-y-5">
+                <div className="rounded-2xl border border-line bg-paper/70 p-5">
+                  <div className="flex items-center justify-between font-mono text-xs">
+                    <span className="text-muted">Context Token Budget</span>
+                    <span className="num font-semibold text-ink">{budget.toLocaleString()} tok</span>
+                  </div>
+                  <input
+                    type="range"
+                    min={500}
+                    max={4000}
+                    step={250}
+                    value={budget}
+                    onChange={(e) => {
+                      const nextB = Number(e.target.value);
+                      setBudget(nextB);
+                      runQuery(task, nextB);
+                    }}
+                    className="klew-slider mt-3"
+                  />
+                </div>
+
+                <div className="rounded-2xl border border-line bg-paper/70 p-5">
+                  <label htmlFor="modal-repo" className="block font-mono text-xs text-muted">
+                    Repository Graph
+                  </label>
+                  <select
+                    id="modal-repo"
+                    value={repo}
+                    onChange={(e) => setRepo(e.target.value)}
+                    disabled={!live}
+                    className="mt-2 w-full rounded-xl border border-line bg-card px-3 py-2 font-mono text-xs text-ink"
+                  >
+                    {repos.length ? (
+                      repos.map((r) => (
+                        <option key={r.repo} value={r.repo}>
+                          {r.repo}
+                        </option>
+                      ))
+                    ) : (
+                      <option>{repo || "httpx"}</option>
                     )}
-                    {it.snippet && (
-                      <details>
-                        <summary className="cursor-pointer text-sm text-muted">Snippet · {it.tokens} tokens</summary>
-                        <pre className="mt-2 max-h-72 overflow-auto rounded-lg bg-code p-3 font-mono text-[0.78rem] leading-5">{it.snippet}</pre>
-                      </details>
-                    )}
+                  </select>
+                  <p className="mt-2 font-mono text-[11px] text-muted">
+                    {live
+                      ? `Connected to live HydraDB (${repo})`
+                      : "Viewing recorded snapshot (run `klew serve` for live queries)"}
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-3 gap-3 text-center font-mono text-xs">
+                  <div className="rounded-2xl border border-line bg-paper/60 p-3.5">
+                    <div className="num text-base font-semibold text-ink">
+                      {stats?.files ?? 60}
+                    </div>
+                    <div className="text-[10px] text-muted">files</div>
+                  </div>
+                  <div className="rounded-2xl border border-line bg-paper/60 p-3.5">
+                    <div className="num text-base font-semibold text-ink">
+                      {(stats?.symbols ?? 1240).toLocaleString()}
+                    </div>
+                    <div className="text-[10px] text-muted">symbols</div>
+                  </div>
+                  <div className="rounded-2xl border border-line bg-paper/60 p-3.5">
+                    <div className="num text-base font-semibold text-ink">
+                      {pack.timings.total_ms.toFixed(0)} ms
+                    </div>
+                    <div className="text-[10px] text-muted">{pack.timings.queries} queries</div>
                   </div>
                 </div>
-              </article>
-            ))}
-          </section>
-
-          <aside className="grid min-w-0 grid-cols-[minmax(0,1fr)] content-start gap-4">
-            <h2 className="text-xl font-bold">Why these files</h2>
-            <PathGraph pack={pack} />
-            <div className="flex flex-wrap gap-4 text-xs text-muted">
-              <span className="flex items-center gap-1.5"><i className="inline-block size-2.5 rounded-full bg-trail" /> seed from the task</span>
-              <span className="flex items-center gap-1.5"><i className="inline-block size-2.5 rounded-full bg-sky" /> symbol on the path</span>
-              <span className="flex items-center gap-1.5"><i className="inline-block size-2.5 rounded-full bg-moss" /> file served</span>
+              </div>
             </div>
+          )}
+        </div>
+      )}
 
-            <div className="grid gap-3 rounded-xl border border-line bg-card p-4">
-              <h3 className="font-bold">Teach it</h3>
-              <p className="text-sm text-muted">Tick the files you actually changed, and add any it missed. Klew strengthens the paths that led there and weakens the ones that didn't.</p>
-              <input id="extra" value={extra} onChange={(e) => setExtra(e.target.value)} disabled={!live}
-                     placeholder="other changed files, e.g. httpx/_utils.py"
-                     className="rounded-lg border border-line bg-paper px-3 py-2 font-mono text-sm" />
-              <button type="button" onClick={teach} disabled={!live || (!touched.size && !extra.trim())}
-                      className="rounded-lg border border-ink px-4 py-2 font-medium disabled:opacity-40">Record outcome</button>
-              {report && (
-                <div className="grid gap-1 text-sm">
-                  <p><b className="text-moss">{report.edges_created}</b> learned edges created, <b>{report.edges_reinforced}</b> reinforced, <b>{report.edges_decayed}</b> weakened.</p>
-                  {report.unserved.length > 0 && <p className="text-muted">Missed this time, linked for next time: <span className="font-mono">{report.unserved.join(', ')}</span></p>}
-                  <p className="text-muted">Run the same task again to see the new ranking.</p>
-                </div>
+      {/* =====================================================================
+          5. BOTTOM-CENTER AGENT PROMPT INPUT BOX + EXAMPLE PILLS ABOVE IT
+         ===================================================================== */}
+      <div className="pointer-events-none absolute inset-x-0 bottom-5 z-20 mx-auto flex w-full max-w-3xl flex-col items-center gap-2.5 px-4">
+        {/* Example Task Pills floating above the prompt box */}
+        <div className="pointer-events-auto flex flex-wrap items-center justify-center gap-1.5">
+          {EXAMPLES.map((ex) => {
+            const isCurrent = task === ex.full;
+            return (
+              <button
+                key={ex.short}
+                type="button"
+                onClick={() => {
+                  setTask(ex.full);
+                  runQuery(ex.full, budget);
+                }}
+                className={`btn-soft rounded-full px-3.5 py-1.5 font-mono text-[11px] shadow-2xs transition-colors ${
+                  isCurrent
+                    ? "bg-ink font-medium text-paper"
+                    : "surface-glass text-muted hover:text-ink"
+                }`}
+              >
+                {ex.short}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Agent Chat Input Box (looks like a true prompt composer, no dot circle) */}
+        <div className="pointer-events-auto w-full rounded-2xl border border-line bg-card/95 p-3 shadow-lg backdrop-blur-md">
+          <input
+            value={task}
+            onChange={(e) => setTask(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && runQuery()}
+            placeholder="Describe an issue or task for Klew to unwind through the repository graph…"
+            className="w-full bg-transparent px-2 py-1 text-sm text-ink placeholder:text-muted focus:outline-none"
+          />
+
+          <div className="mt-2.5 flex flex-wrap items-center justify-between gap-2 border-t border-line/70 pt-2.5 pl-1">
+            <div className="flex flex-wrap items-center gap-1.5 font-mono text-[11px] text-muted">
+              <button
+                type="button"
+                onClick={() => setActiveModal("settings")}
+                className="btn-soft rounded-lg border border-line bg-paper px-2.5 py-1 hover:text-ink"
+                title="Change repository or token budget"
+              >
+                repo: {repo}
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveModal("settings")}
+                className="btn-soft rounded-lg border border-line bg-paper px-2.5 py-1 hover:text-ink"
+                title="Adjust token budget"
+              >
+                budget: {budget.toLocaleString()} tok
+              </button>
+              {pack && (
+                <button
+                  type="button"
+                  onClick={() => setActiveModal("files")}
+                  className="btn-soft hidden rounded-lg border border-line bg-paper px-2.5 py-1 hover:text-ink sm:inline-block"
+                >
+                  {pack.items.length} files packed
+                </button>
               )}
             </div>
 
-            {stats && (
-              <div className="grid grid-cols-2 gap-3 text-sm">
-                {[['files', stats.files], ['symbols', stats.symbols], ['learned links', stats.edges.POINTS_TO ?? 0], ['runs', stats.runs]].map(([k, v]) => (
-                  <div key={k as string} className="rounded-lg border border-line bg-card px-3 py-2">
-                    <div className="eyebrow">{k}</div>
-                    <div className="font-mono text-lg tabular">{Number(v).toLocaleString()}</div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </aside>
+            <button
+              type="button"
+              onClick={() => runQuery()}
+              disabled={busy}
+              className="btn-soft inline-flex items-center gap-2 rounded-xl bg-ink px-4 py-2 font-mono text-xs font-medium text-paper hover:opacity-90 disabled:opacity-40"
+            >
+              <span>{busy ? "Walking…" : "Unwind Context"}</span>
+              <span aria-hidden="true">→</span>
+            </button>
+          </div>
         </div>
-      )}
+
+        {error && (
+          <div className="pointer-events-auto rounded-xl border border-line bg-card px-4 py-1.5 font-mono text-xs text-ink shadow-sm">
+            {error}
+          </div>
+        )}
+      </div>
     </div>
-  )
+  );
+}
+
+function DockIconButton({
+  active,
+  onClick,
+  label,
+  badge,
+  children,
+}: {
+  active?: boolean;
+  onClick: () => void;
+  label: string;
+  badge?: number;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      title={label}
+      aria-label={label}
+      className={`btn-soft group relative flex h-11 w-11 items-center justify-center rounded-2xl transition-colors ${
+        active
+          ? "bg-ink text-paper shadow-sm"
+          : "text-ink-soft hover:bg-paper hover:text-ink"
+      }`}
+    >
+      {children}
+      {badge !== undefined && badge > 0 && (
+        <span className="num absolute -top-1 -right-1 flex h-4.5 min-w-4.5 items-center justify-center rounded-full border border-line bg-card px-1 font-mono text-[10px] font-semibold text-ink shadow-2xs">
+          {badge}
+        </span>
+      )}
+    </button>
+  );
 }

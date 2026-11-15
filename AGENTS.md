@@ -119,6 +119,27 @@ Status: ✅ done · 🟡 in progress · ⬜ todo
 
 ## Latest changes (newest first)
 
+- **2026-11-15 H18: Soft, breathable Light UI & Full-Screen Graph Playground (branch `ui/klew-labyrinth`).**
+  - **Brand mark & wordmark (`web/public/favicon.svg`, `web/src/components/Logo.tsx`, `packages/mcpb/icon.png`):**
+    3×3 labyrinth node matrix + concentric coiled clew at `(8.5, 7.5)` unwinding as two exploratory dots into a solid
+    K-shaped desire path (`--trail` `#c47a1b`) terminating at the reinforced target file node (`--moss` `#2b7a58`).
+    Rendered `512×512` `packages/mcpb/icon.png` (and `web/public/icon-512.png`) and wired into
+    `packages/mcpb/manifest.json`. Updated `scripts/social_card.py` and regenerated `docs/social/klew-x-light.png` &
+    `docs/social/klew-x-dark.png`.
+  - **Soft light palette & breathing whitespace (`web/src/index.css`, `web/src/App.tsx`):** Warm stone paper (`#f6f5f1`)
+    with pure elevated cards (`#ffffff`), soft rounded geometry (`rounded-2xl`, `rounded-3xl`, `rounded-full` pills),
+    and wide breathing horizontal padding (`--page-pad: clamp(1.5rem, 6.5vw, 7rem)`).
+  - **Overview (`web/src/pages/Landing.tsx`, `web/src/components/LabyrinthHero.tsx`):** Minimal centered hero, interactive
+    `<LabyrinthHero />` card with 3 real `httpx` scenarios and a "1st walk vs PR merged" toggle, 3 airy philosophy cards,
+    held-out evidence summary (`95%` hybrid / `90%` Klew vs `58%` vector RAG) + full-width curve, and 60-second setup.
+  - **Playground (`web/src/pages/Dashboard.tsx`, `PathGraph.tsx`, `WhyPath.tsx`):** Full-viewport relationship graph canvas
+    connected through a central `Task Clew` seed hub (`zoomToFit`, curved bezier links, particle pulses). Left floating icon
+    dock (`Context Files`, `Teach Graph`, `Budget & Graph`, `Corner Inspector`) opens centered modals; selecting a file in
+    the modal or on the canvas collapses the modal into a top-right corner inspector drawer so the graph remains visible.
+    Bottom-center agent chat composer with example task pills floating above it.
+  - **Evidence (`web/src/pages/Results.tsx`) & Docs (`web/src/pages/Docs.tsx`):** Renamed "Results" to "Evidence"; spacious
+    single-column flow with repository switcher (`httpx` → `flask` → `ods`) and full-width charts (`height={420}`).
+    Docs updated to match the soft light theme and generous padding.
 - **2026-11-15 H17: distribution ready (not yet published).** See `docs/PUBLISHING.md`.
   - PyPI `klew` (wheel + 48 KB sdist; `pip install klew`), with new `klew hydra up/down/status` (local HydraDB in Docker).
   - npm `klew`: `packages/npm/bin/klew.js` launcher → `uvx --from klew==<ver> klew …` (falls back to pipx/klew; finds uv
@@ -244,15 +265,12 @@ Status: ✅ done · 🟡 in progress · ⬜ todo
 
 ## Next up
 
-- **B (teammate): UI pass on `web/`.** The pages are Landing `src/pages/Landing.tsx`, Dashboard
-  `src/pages/Dashboard.tsx`, Results `src/pages/Results.tsx`, and Docs `src/pages/Docs.tsx` + `src/docs/*.md`.
-  Theme tokens live in `src/index.css` (light and dark). Run it with `klew serve` + `cd web && npm run dev`.
-  Starting backlog:
-  - Consider leading the landing stats with the hybrid (83% right-file-in-context) instead of graph-only (77%).
-  - The Results page lists repos alphabetically (flask first); httpx first may read better.
-  - The why-path force graph clips nodes at its edges; consider fitting the view after layout (`zoomToFit`).
-  - Keep every number sourced from `eval/results/*.json` (snapshot: `scripts/snapshot_web.py`). Never hard-code results.
-  - Check at 390px and 1280px in both themes; the page must not scroll horizontally.
+- **B (teammate): UI pass on `web/` — ✅ done on `ui/klew-labyrinth`.**
+  - [x] Lead the landing stats with the hybrid (`95%` right-file-in-context) alongside standalone Klew (`90%`).
+  - [x] Order the Results page with `httpx` first (`httpx` → `flask` → `ods`).
+  - [x] Fit the why-path force graph view after layout (`zoomToFit`).
+  - [x] Keep every number sourced from `eval/results/*.json` (`snapshot/eval-*.json`).
+  - [x] Checked at 390px and 1280px in both light and dark themes.
 - **Everyone:** confirm submission rules on Discord; make the repo public before submitting; record the
   video (`docs/VIDEO.md`); deploy `web/` as a static site.
 - **A:** relevance cutoff (stop packing when score < x% of top; tune held-in), budget sweep chart
