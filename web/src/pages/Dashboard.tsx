@@ -58,7 +58,8 @@ export function Dashboard() {
       if (up) {
         const rs = await api.repos().catch(() => []);
         setRepos(rs);
-        const defaultRepo = rs[0]?.repo || "httpx";
+        // The example tasks are httpx tasks, so start there when it is indexed.
+        const defaultRepo = rs.find((r) => r.repo === "httpx")?.repo ?? rs[0]?.repo ?? "httpx";
         setRepo(defaultRepo);
         try {
           const p = await api.context(defaultRepo, EXAMPLES[0].full, 2000);
@@ -101,6 +102,8 @@ export function Dashboard() {
         setSelectedFile(res.items[0]?.path ?? null);
         setCornerOpen(true);
       } else if (snapshotPacks.length) {
+        // Offline: only recorded packs exist. Show the closest one exactly as recorded and say so;
+        // never relabel it with the typed task or re-pack it for a different budget.
         const q = nextTask.toLowerCase();
         const found =
           snapshotPacks.find((p) => p.task.toLowerCase() === q) ||
@@ -112,25 +115,15 @@ export function Dashboard() {
                 : p.task.includes("NO_PROXY"),
           ) ||
           snapshotPacks[0];
-
-        let used = 0;
-        const filtered = found.items.filter((it) => {
-          if (used + it.tokens <= nextBudget || used === 0) {
-            used += it.tokens;
-            return true;
-          }
-          return false;
-        });
-
-        const nextPack: ContextPack = {
-          ...found,
-          task: nextTask,
-          budget_tokens: nextBudget,
-          tokens: used,
-          items: filtered,
-        };
-        setPack(nextPack);
-        setSelectedFile(filtered[0]?.path ?? null);
+        if (found.task.toLowerCase() !== q) {
+          setError(
+            `Offline: only recorded runs are available, so this shows the recorded pack for "${found.task}". Start \`klew serve\` to ask your own task.`,
+          );
+        }
+        setTask(found.task);
+        setBudget(found.budget_tokens);
+        setPack(found);
+        setSelectedFile(found.items[0]?.path ?? null);
         setCornerOpen(true);
       }
     } catch (e) {
@@ -153,40 +146,7 @@ export function Dashboard() {
         const refreshed = await api.context(repo, pack.task, budget);
         setPack(refreshed);
       } else {
-        const servedSet = new Set(pack.items.map((i) => i.path));
-        const hits = files.filter((f) => servedSet.has(f));
-        const unserved = files.filter((f) => !servedSet.has(f));
-        const misses = pack.items.map((i) => i.path).filter((p) => !files.includes(p));
-
-        const updatedItems = pack.items
-          .map((it) => {
-            const isHit = files.includes(it.path);
-            const nextScore = isHit
-              ? Math.round((it.score + 0.45) * 100) / 100
-              : Math.max(0.1, Math.round(it.score * 0.92 * 100) / 100);
-            const nextWhy = it.why.map((s, idx) =>
-              idx === 0 && isHit
-                ? {
-                    ...s,
-                    via: s.via || "points to",
-                    weight: Math.round(((s.weight || 1.2) + 0.6) * 10) / 10,
-                  }
-                : s,
-            );
-            return { ...it, score: nextScore, why: nextWhy };
-          })
-          .sort((a, b) => b.score - a.score);
-
-        setPack({ ...pack, items: updatedItems });
-        setReport({
-          run_id: pack.run_id,
-          hits,
-          misses,
-          unserved,
-          edges_reinforced: files.length * 4,
-          edges_decayed: misses.length,
-          edges_created: unserved.length * 2,
-        });
+        setError("Teaching writes to the graph, so it needs the live API. Start `klew serve` and reload.");
       }
     } catch (e) {
       setError(String((e as Error).message));
@@ -533,7 +493,9 @@ export function Dashboard() {
               <p className="mt-4 text-sm leading-relaxed text-muted">
                 Select the files your PR actually modified. Klew reinforces{" "}
                 <code className="rounded bg-paper px-1.5 py-0.5 font-mono text-xs text-ink">POINTS_TO</code> links
-                toward those symbols and gently decays served files you did not touch.
+                from the task's words to those files, strengthens co-change links between them, and decays links to
+                served files you did not touch.
+                {!live && " Teaching needs the live API (klew serve)."}
               </p>
 
               <div className="mt-4 grid max-h-60 grid-cols-1 gap-2 overflow-y-auto pr-1 sm:grid-cols-2">
@@ -585,7 +547,7 @@ export function Dashboard() {
                 <button
                   type="button"
                   onClick={teach}
-                  disabled={(touched.size === 0 && !extra.trim()) || busy}
+                  disabled={!live || (touched.size === 0 && !extra.trim()) || busy}
                   className="btn-soft rounded-full bg-ink px-6 py-2.5 font-mono text-xs font-medium text-paper shadow-xs disabled:opacity-40"
                 >
                   {busy ? "Updating…" : `Reinforce Thread (${touched.size}) →`}
@@ -630,6 +592,7 @@ export function Dashboard() {
                     max={4000}
                     step={250}
                     value={budget}
+                    disabled={!live}
                     onChange={(e) => {
                       const nextB = Number(e.target.value);
                       setBudget(nextB);
@@ -670,13 +633,13 @@ export function Dashboard() {
                 <div className="grid grid-cols-3 gap-3 text-center font-mono text-xs">
                   <div className="rounded-2xl border border-line bg-paper/60 p-3.5">
                     <div className="num text-base font-semibold text-ink">
-                      {stats?.files ?? 60}
+                      {stats?.files ?? "–"}
                     </div>
                     <div className="text-[10px] text-muted">files</div>
                   </div>
                   <div className="rounded-2xl border border-line bg-paper/60 p-3.5">
                     <div className="num text-base font-semibold text-ink">
-                      {(stats?.symbols ?? 1240).toLocaleString()}
+                      {stats ? stats.symbols.toLocaleString() : "–"}
                     </div>
                     <div className="text-[10px] text-muted">symbols</div>
                   </div>

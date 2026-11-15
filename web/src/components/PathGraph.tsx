@@ -66,6 +66,8 @@ export function PathGraph({
     const nodes = new Map<string, N>();
     const links = new Map<string, L>();
 
+    // A file's rank is its position in the pack; files met mid-path that aren't packed get no rank.
+    const rankOf = new Map(pack.items.map((it, i) => [it.path, i + 1]));
     const taskHubId = "__task_clew__";
     nodes.set(taskHubId, {
       id: taskHubId,
@@ -128,7 +130,7 @@ export function PathGraph({
             label: s.node,
             kind,
             score: isFileNode ? it.score : cur?.score ?? 0.6,
-            rank: isFileNode ? rank : cur?.rank,
+            rank: isFileNode ? rankOf.get(s.node) : cur?.rank,
             filePath: isFileNode ? it.path : cur?.filePath ?? it.path,
             x: cur?.x ?? Math.cos(angle) * radius,
             y: cur?.y ?? Math.sin(angle) * radius,
@@ -156,7 +158,7 @@ export function PathGraph({
       const existingFile = nodes.get(fileId);
       if (existingFile) {
         existingFile.score = it.score;
-        existingFile.rank = existingFile.rank ?? rank;
+        existingFile.rank = rank;
         existingFile.filePath = it.path;
       } else {
         nodes.set(fileId, {

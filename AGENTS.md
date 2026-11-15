@@ -133,6 +133,9 @@ Status: ✅ done · 🟡 in progress · ⬜ todo
   - Removed hard-coded fallback numbers on the landing page (some were wrong, e.g. 2,175 / 3,742 tok); learning lift
     is now MRR (significant on every repo; in-context lift isn't on ODS); "80-line chunks" → 40 (the real window);
     "Blind-start tasks avoided" relabelled to what it counts; MRR shown as % like the docs; held-out count computed.
+  - Playground: offline mode no longer relabels a recorded pack with the typed task or simulates learning
+    (teach and budget need `klew serve`); no hard-coded stats; graph rank labels come from the pack order
+    (files met mid-path were showing another file's rank); defaults to httpx, which the example tasks are for.
 - **2026-11-15 H18: confidence intervals, native MSpaths explain, hosted demo container.**
   - `klew/eval/stats.py`: paired bootstrap 95% CIs (2,000 resamples) for the key comparisons, stored as
     `ci_held_out` in every `eval/results/*.json` (`scripts/annotate_results.py`). Shown in the README ("Key
