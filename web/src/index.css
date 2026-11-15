@@ -35,19 +35,19 @@
   --font-sans: "Instrument Sans", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
 
-  --color-paper: var(--paper);
-  --color-paper-deep: var(--paper-deep);
-  --color-card: var(--card);
-  --color-card-elevated: var(--card-elevated);
-  --color-ink: var(--ink);
-  --color-ink-soft: var(--ink-soft);
-  --color-muted: var(--muted);
-  --color-line: var(--line);
-  --color-guide: var(--guide);
-  --color-trail: var(--trail);
-  --color-trail-soft: var(--trail-soft);
-  --color-moss: var(--moss);
-  --color-moss-soft: var(--moss-soft);
+  --color-paper: #f6f5f1;
+  --color-paper-deep: #eceae3;
+  --color-card: #ffffff;
+  --color-card-elevated: #ffffff;
+  --color-ink: #172a38;
+  --color-ink-soft: #334b5c;
+  --color-muted: #677985;
+  --color-line: #e4e2da;
+  --color-guide: #d5d2c8;
+  --color-trail: #c47a1b;
+  --color-trail-soft: rgba(196, 122, 27, 0.1);
+  --color-moss: #2b7a58;
+  --color-moss-soft: rgba(43, 122, 88, 0.1);
 }
 
 html,

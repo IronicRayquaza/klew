@@ -155,7 +155,7 @@ klew context "Raise ReadTimeout when stream times out"`;
               inset: "1.2vh 5vw 6.5vh 5vw",
               borderRadius: "32px",
             }}
-            className="absolute overflow-hidden border border-line/60 shadow-md will-change-[inset,border-radius]"
+            className="absolute overflow-hidden will-change-[inset,border-radius]"
           >
             {/* Background Image with Mouse Hover Movement + Scroll Parallax */}
             <img

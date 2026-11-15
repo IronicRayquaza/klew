@@ -49,7 +49,9 @@ export default function App() {
   const tab = route.tab;
   const isPlayground = tab === "app";
   const isLanding = tab === "landing";
-  const navBlurred = scrollY > 360;
+  const heroHeightThreshold =
+    typeof window !== "undefined" ? Math.round(window.innerHeight * 1.55) : 1350;
+  const navBlurred = isLanding ? scrollY > heroHeightThreshold : scrollY > 40;
 
   const copyInstallCmd = () => {
     navigator.clipboard?.writeText("pip install klew && klew hydra up");
@@ -63,14 +65,14 @@ export default function App() {
         isPlayground ? "h-screen overflow-hidden" : "min-h-screen overflow-x-clip"
       }`}
     >
-      {/* Top Navigation (transparent on top of Hero image; slight blur later in page) */}
+      {/* Top Navigation (transparent through entire Hero section; slight borderless blur after Hero is scrolled) */}
       <header
         className={`z-40 w-full transition-colors duration-300 ${
           isPlayground
-            ? "sticky top-0 border-b border-line/70 bg-card/90 backdrop-blur-md px-5 sm:px-8"
-            : `fixed top-0 inset-x-0 pt-3 px-frame ${
+            ? "sticky top-0 bg-card/90 backdrop-blur-md px-5 sm:px-8"
+            : `fixed top-0 inset-x-0 py-2.5 px-frame ${
                 navBlurred
-                  ? "bg-paper/45 backdrop-blur-md border-b border-line/40 pb-2"
+                  ? "bg-paper/55 backdrop-blur-md"
                   : "bg-transparent"
               }`
         }`}
