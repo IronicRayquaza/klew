@@ -28,7 +28,7 @@ Judging: engineering + go-to-market. Hard rule: "it has to earn its place over a
   3. **Loom walkthrough**.
 - **Deadline: 9 AM IST, Nov 16.**
 
-Submission checklist: [ ] live deployment (API + HydraDB + site) · [ ] repo renamed `klew` and public ·
+Submission checklist: [x] live deployment (https://klew-demo.onrender.com) · [ ] repo renamed `klew` and public ·
 [x] graph ablation (walk off) in the eval · [x] continual-learning chart · [ ] Loom · [ ] X/LinkedIn posts.
 
 ## Reading order
@@ -121,6 +121,14 @@ Status: ✅ done · 🟡 in progress · ⬜ todo
 
 ## Latest changes (newest first)
 
+- **2026-11-15 H20: live on Render, demo video, release built.**
+  - Live: https://klew-demo.onrender.com (keep-awake on). `scripts/vs_rag.py`: Klew vs vector RAG side by side on
+    commits the graph has never seen (graph rebuilt as of an older commit, warm-started only on history before it;
+    vector embeddings cached next to the snapshot). httpx, 60 unseen commits, learning frozen: changed files in the
+    pack 86.1% vs 56.5%; `359f77d4` "Clean up URL signature": 5/5 vs 0/5.
+  - Demo video edited (3:38): live site → Klew vs RAG → Claude Code over MCP (real get_context/record_outcome output).
+  - `scripts/build_release.sh` passes: wheel, sdist, `klew.mcpb`, npm dry-run, plugin + marketplace valid; the wheel
+    works from a clean venv. Names `klew` free on PyPI and npm. History scanned for secrets before going public: clean.
 - **2026-11-15 H19: UI redesign merged (PR #1 by B, `ui/klew-labyrinth`), with data fixes.**
   - New brand mark (`favicon.svg`, `Logo.tsx`, `packages/mcpb/icon.png`, social cards), soft light theme
     (`index.css`), Overview / full-screen graph Playground / Evidence (repo switcher, httpx first) / Docs.
@@ -284,8 +292,9 @@ Status: ✅ done · 🟡 in progress · ⬜ todo
 - **B (teammate): UI pass on `web/` ✅ merged (H19).** Rule stands: every number on a page comes from
   `eval/results/*.json` or a recorded snapshot (`scripts/snapshot_web.py`, `scripts/hero_snapshot.py`); never
   hand-write results or example outputs. Check 390px and 1280px in both themes.
-- **Owner: go live on Render.** Push, then Render → New → Blueprint → `IronicRayquaza/klew` (uses
-  `render.yaml`). Once live, set the repo Actions variable `KLEW_DEMO_URL` so keep-awake pings it.
+- **Owner: live on Render ✅** https://klew-demo.onrender.com (verified 2026-11-15: all pages, 390/1440 px, a live
+  query ~4–5 s, stats cached). `KLEW_DEMO_URL` is set and keep-awake pings it every 10 min (first run green).
+  `autoDeploy: false`, so redeploy manually after pushing.
 - **Everyone:** make the repo public before submitting; record the Loom (`docs/VIDEO.md`, update numbers to
   H15/H16 + CIs); publish packages (`docs/PUBLISHING.md`); X/LinkedIn posts tagging HydraDB.
 - **A:** relevance cutoff (stop packing when score < x% of top; tune held-in), budget sweep chart

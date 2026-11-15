@@ -1,43 +1,55 @@
-# Demo video script (Loom, ≤ 3:00)
+# Demo video script (Loom, about 3:30)
 
-Record locally (about 0.3 s per query; the free hosted demo takes about 8 s), then show the live link at the
-end. Terminal font 18pt+, browser zoom 125%. Use real output only. Every number below is held-out, from
-`eval/results/*.json` (`summary_held_out`, `ci_held_out`); re-run `scripts/readme_results.py` if they change.
+Flow: the live site → the Playground → Klew vs vector RAG in the terminal → Klew inside Claude Code over MCP.
+Terminal font 18pt+, browser zoom 110–125%. Real output only. Aggregate numbers are held-out, from
+`eval/results/*.json` (`summary_held_out`, `ci_held_out`).
 
-## Before recording
+## Before recording (10 minutes)
 
 ```bash
-docker compose up -d && curl -s http://127.0.0.1:9090/readyz          # HydraDB
-.venv/bin/klew serve                                                   # API on :8000
-cd web && npm run dev                                                  # site on :5173
-# Claude Code segment: from inside the httpx checkout
-cd .vendor/eval-repos/httpx && git status                              # clean tree
-claude mcp add klew -e KLEW_REPO=httpx -- "$PWD/../../../.venv/bin/klew" mcp
+# 1. Wake the live demo a minute ahead (free instance; first query after a wake-up is slow)
+open https://klew-demo.onrender.com/#app
+
+# 2. Local HydraDB for the terminal and Claude Code segments
+docker compose up -d && curl -s http://127.0.0.1:9090/readyz
+
+# 3. Klew vs RAG: the snapshot is already built (.klew/vsrag/); these just reuse it
+.venv/bin/python scripts/vs_rag.py --list           # commits the graph has never seen
+.venv/bin/python scripts/vs_rag.py --commit 359f77d4  # dry run of the showcase commit
+.venv/bin/python scripts/vs_rag.py --all            # ~55 s; run once now so you know the result
+
+# 4. Claude Code with Klew over MCP (local install; PyPI/npm aren't published yet)
+cd .vendor/eval-repos/httpx && git status           # must be clean
+claude mcp add klew -e KLEW_REPO=httpx -- "$(cd ../../.. && pwd)/.venv/bin/klew" mcp
+claude                                              # check `/mcp` lists klew with 4 tools
 ```
 
-Dry-run the Claude Code task once (then `git checkout .`), so the take is smooth. Afterwards remove the
-server with `claude mcp remove klew`.
+Dry-run the Claude Code prompt once, then `git checkout .` in the httpx checkout. After recording:
+`claude mcp remove klew`.
 
 ## Script
 
 | Time | Screen | Say |
 |---|---|---|
-| 0:00–0:15 | Landing hero | "Coding agents rediscover your repo every session: they grep, paste whole files, and burn tokens. Klew gives them a small map of the code that matters, and it gets sharper with every merged PR." |
-| 0:15–0:40 | Terminal: `klew context --repo httpx "Support NO_PROXY environment variable with CIDR ranges"` | "Klew parses the repo into a code graph in HydraDB: symbols, calls, tests, imports, and which files change together. For a task it returns signatures and the right snippet, each with the path that justifies it, inside a 2,000-token budget." |
-| 0:40–1:10 | Claude Code in the httpx checkout. Prompt: *"Use klew to find where NO_PROXY is handled, then add CIDR support."* Show the `get_context` call, the edit, `record_outcome`, then ask *"Explain why _utils.py was relevant"* → `explain` | "One MCP call gives the agent its context. When the change lands, `record_outcome` tells the graph which files mattered. `explain` asks HydraDB's native path search, MSpaths, for the chain: `_get_proxy_map` calls `get_environment_proxies`, which lives in `_utils.py`." |
-| 1:10–1:30 | Dashboard `#app`: run a task, show the why-path graph, tick "I changed this", record, run again | "Learning is just edges. Words in the task point to the files that changed; files we served that didn't matter decay. Structural edges stay facts; experience is a separate, learned layer, so re-indexing never erases it." |
-| 1:30–2:20 | `#results`: held-out toggle, the table, Comparisons panel, then the learning curve | "We replayed real commit history: the commit message is the task, the changed files are the answer, every approach gets the same 2,000 tokens. We tuned on the first 100 httpx commits only and report the rest, plus flask and ODS, which we never tuned on. The right file lands in context 95% of the time on httpx against 58% for vector RAG, 92 vs 45 on flask, 72 vs 35 on the unseen ODS, at about half the tokens per correct file. Learning on versus off is a significant gain in top-1 and MRR on all three repos, and the curve shows it: on httpx, top-1 goes from 45 to 50% and MRR from 57 to 63 as the graph learns. Every comparison has a paired 95% interval; ranking against vector is closer, significant on httpx and flask." |
-| 2:20–2:45 | `klew/schema.py` (edge types), then `klew/adapters/queries.py` (`ms_paths`) | "HydraDB does the graph work: typed structural edges, learned POINTS_TO and CO_CHANGED edges updated in place with batched MERGE, parallel one-hop expansions for the walk, and MSpaths for explanations. The cost is latency: about 0.3 s per pack versus 15 ms for a vector lookup." |
-| 2:45–3:00 | Landing install section, then the live URL | "It's open source: `pip install klew`, an npm launcher, a Claude Code plugin, a Desktop extension, and a GitHub Action that learns from every merge. Next is a shared team graph on HydraDB, so every engineer's merges sharpen everyone's agent. Try it at [live URL]." |
+| 0:00–0:15 | **Live site**, landing hero, URL bar visible. Toggle the hero between *Learning off* and *After 268 past commits*. | "Coding agents rediscover your repo every session: they grep, paste whole files, and burn tokens. Klew is an MCP server that hands them a small, token-budgeted map of the code that matters, built on a HydraDB graph, and it gets sharper with every merged PR. This hero is a real recorded run: green links are what the graph learned from past commits." |
+| 0:15–0:45 | **Evidence** page: headline cards, the method table, **Key comparisons**, then the learning curve. | "We test on real git history: the commit message is the task, the files it changed are the answer, every approach gets the same 2,000 tokens. On held-out httpx commits the changed file lands in context 95% of the time against 58% for vector RAG, at about half the tokens per correct file, and every comparison has a 95% confidence interval. Learning is a significant gain on all three repos, including ODS, which we never tuned on." |
+| 0:45–1:25 | **Playground**, live. Run *NO_PROXY CIDR ranges* (a few seconds on the free server). Open the inspector: **Evidence** chips and the **Thread**. Step to a walked file (e.g. `__init__.py`, "reached by the graph walk"). Open **Teach**, tick `httpx/_utils.py`, *Reinforce*, point at "+N reinforced". | "Every file comes with its reason. Evidence: the file name matches, and the graph learned that 'environment' points here. Files with no direct evidence are reached by walking the graph: imports, calls, tests, co-change. When a change lands, we tell Klew which files mattered. Learning is just edges in HydraDB: task words point to files, misses decay, and the code graph itself is never touched, so re-indexing never erases what it learned." |
+| 1:25–2:15 | **Terminal**: `.venv/bin/python scripts/vs_rag.py --commit 359f77d4`, then show the `--all` result (run it on camera and cut, or show the output you ran before). | "Same thing head to head, on a commit the graph has never seen: we rebuilt it as of an earlier commit and replayed one that came later. The task is 'Clean up URL signature.' Vector RAG spends its whole budget on two files, neither of which changed. Klew's pack has all five changed files, the first at #1. And across all 60 commits after that point, with learning frozen: Klew gets 86% of the changed files into the pack, vector RAG 57%. Vector won 4 of them, mostly version bumps, so it's not magic, but it's a big, consistent gap." |
+| 2:15–3:05 | **Claude Code** in the httpx checkout. Prompt: *"Call klew get_context with the task 'Support NO_PROXY environment variable with CIDR ranges'. Using that context, add CIDR support (e.g. NO_PROXY=10.0.0.0/8), then call record_outcome with the run_id and the files you edited."* Show the `get_context` call and its pack (`_utils.py` #1, `tests/test_utils.py` #2 when we checked), the edit, then `record_outcome`. Optional: *"Use klew explain: why is httpx/_utils.py relevant?"* | "Here's the real workflow. One MCP call gives the agent its context: no grepping, no whole files. The pack leads with `_utils.py`, where NO_PROXY is parsed, and its tests, so the agent goes there and makes the change. [Describe what it actually did.] Then `record_outcome` tells the graph which files mattered, which is the same learning a merged PR triggers through our GitHub Action. `explain` uses HydraDB's native path search to show the chain from the task to the file." |
+| 3:05–3:30 | Back to the live site: landing install section, then the URL. | "It's open source and self-hosted on open-source HydraDB, with a CLI, the MCP server, a Claude Code plugin, a Desktop extension and a GitHub Action that learns on every merge. The cost is latency: a few hundred milliseconds per pack locally, versus milliseconds for a vector lookup. Try it at klew-demo.onrender.com." |
 
-## Numbers used (held-out)
+## Numbers used
 
 | | httpx | flask | ODS (unseen) |
 |---|---|---|---|
-| Right file in context, Klew + vector seeds vs vector RAG | 95.3 vs 58.1 | 91.6 vs 45.1 | 71.9 vs 35.0 |
+| Right file in context, Klew + vector seeds vs vector RAG (held-out) | 95.3 vs 58.1 | 91.6 vs 45.1 | 71.9 vs 35.0 |
 | Tokens per correct file | 1,986 vs 3,392 | 2,087 vs 4,393 | 2,753 vs 5,557 |
 | Learning on vs off, top-1 / MRR (points, all significant) | +6.0 / +6.7 | +6.1 / +7.4 | +7.8 / +6.9 |
 | Learning curve, top-1 and MRR (0 → 600 learned; ODS 0 → 300) | 45.2 → 50.2, 57.0 → 63.0 | MRR 49.4 → 55.0 | 35.5 → 40.4, 48.3 → 52.0 |
 
+Terminal segment (`scripts/vs_rag.py`, httpx, graph frozen at `3b9060ee` after learning from earlier commits,
+60 later commits): changed files in the pack, Klew 86.1% vs vector RAG 56.5%; Klew ahead on 27, vector on 4,
+tied on 29. `359f77d4` "Clean up URL signature": Klew 5/5 (first at #1), vector RAG 0/5.
+
 Don't say "beats vector on every metric". Ranking vs vector with vector seeds is significant on httpx and
-flask; on ODS only MRR is.
+flask; on ODS only MRR is. The free hosted demo takes a few seconds per query; say so if it shows.
