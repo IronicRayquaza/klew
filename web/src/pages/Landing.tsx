@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Curve } from "../components/Curve";
 import { LabyrinthHero } from "../components/LabyrinthHero";
 import { useEvalResults } from "../useEval";
@@ -35,6 +35,43 @@ export function Landing({ onTry, onResults, onDocs }: Props) {
   const [selectedRepoKey, setSelectedRepoKey] = useState<"httpx" | "flask" | "ods">("httpx");
   const [installTab, setInstallTab] = useState<"cli" | "mcp">("cli");
   const [copied, setCopied] = useState(false);
+
+  // Scroll expansion (90% -> 100% in first 100px without moving H1) + mouse hover parallax
+  const heroStageRef = useRef<HTMLElement>(null);
+  const [scrollYVal, setScrollYVal] = useState(0);
+  const [mouseOffset, setMouseOffset] = useState({ x: 0, y: 0 });
+
+  useEffect(() => {
+    let rafId = 0;
+    const updateScroll = () => {
+      const y = window.scrollY || window.pageYOffset || 0;
+      setScrollYVal(y);
+    };
+    const onScroll = () => {
+      cancelAnimationFrame(rafId);
+      rafId = requestAnimationFrame(updateScroll);
+    };
+    updateScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      cancelAnimationFrame(rafId);
+      window.removeEventListener("scroll", onScroll);
+    };
+  }, []);
+
+  const handleHeroMouseMove = (e: React.MouseEvent<HTMLElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const nx = ((e.clientX - rect.left) / Math.max(1, rect.width) - 0.5) * 2;
+    const ny = ((e.clientY - rect.top) / Math.max(1, rect.height) - 0.5) * 2;
+    setMouseOffset({
+      x: Math.max(-1, Math.min(1, nx)),
+      y: Math.max(-1, Math.min(1, ny)),
+    });
+  };
+
+  const handleHeroMouseLeave = () => {
+    setMouseOffset({ x: 0, y: 0 });
+  };
 
   const activeEval =
     results?.find((r) => r.repo.toLowerCase().includes(selectedRepoKey)) ??
@@ -75,58 +112,119 @@ klew context "Raise ReadTimeout when stream times out"`;
   }
 }`;
 
+  const EXPAND_PX = 100;
+  const expandProgress = Math.min(1, Math.max(0, scrollYVal / EXPAND_PX));
+  const holdOffset = Math.min(scrollYVal, EXPAND_PX);
+  const parallaxProgress = Math.min(1, Math.max(0, (scrollYVal - EXPAND_PX) / 500));
+
+  const frameSizePct = 90 + 10 * expandProgress;
+  const frameRadiusPx = Math.round(32 * (1 - expandProgress));
+
   return (
     <div className="w-full">
       {/* =====================================================================
-          HERO - BREATHABLE, SOFT, CENTERED EDITORIAL + INTERACTIVE THREAD
+          HERO STAGE - STICKY PARALLAX EXPANDING IMAGE (90% -> 100%) + GRAPH
          ===================================================================== */}
-      <section className="px-frame pt-12 pb-24 sm:pt-18 sm:pb-32">
-        <div className="mx-auto max-w-4xl text-center">
-          <div className="inline-flex items-center rounded-full border border-line bg-card px-4 py-1.5 font-mono text-xs text-muted shadow-2xs">
-            <span>MCP Context Server for Coding Agents · Built on HydraDB</span>
-          </div>
+      <section
+        ref={heroStageRef}
+        onMouseMove={handleHeroMouseMove}
+        onMouseLeave={handleHeroMouseLeave}
+        className="relative w-full"
+      >
+        {/* Sticky Full-Screen Background Layer (starts at top:0 behind transparent navbar; expands 90% -> 100% in first 100px) */}
+        <div className="pointer-events-none sticky top-0 z-0 flex h-screen w-full items-center justify-center overflow-hidden">
+          <div
+            style={{
+              width: `${frameSizePct}%`,
+              height: `${frameSizePct}%`,
+              borderRadius: `${frameRadiusPx}px`,
+              transition: "width 90ms ease-out, height 90ms ease-out, border-radius 90ms ease-out",
+            }}
+            className="relative overflow-hidden border border-line/60 shadow-md will-change-transform"
+          >
+            {/* Background Image with Mouse Hover Movement + Scroll Parallax */}
+            <img
+              src="/heroBg.webp"
+              alt=""
+              aria-hidden="true"
+              style={{
+                transform: `translate3d(${mouseOffset.x * -22}px, ${mouseOffset.y * -14 - parallaxProgress * 36}px, 0) scale(1.09)`,
+                transition: "transform 200ms cubic-bezier(0.22, 1, 0.36, 1)",
+              }}
+              className="h-full w-full object-cover object-center select-none will-change-transform"
+            />
 
-          <h1 className="mt-7 font-display text-[clamp(2.6rem,5.2vw,4.6rem)] font-semibold leading-[1.04] tracking-[-0.03em] text-ink">
-            Your codebase is a labyrinth.{" "}
-            <span className="text-trail">Klew is the thread.</span>
-          </h1>
+            {/* Soft Atmospheric Veil for Crisp Headline Readability */}
+            <div
+              className="absolute inset-0"
+              style={{
+                background:
+                  "radial-gradient(ellipse 64% 56% at 50% 44%, rgba(246, 245, 241, 0.86) 0%, rgba(246, 245, 241, 0.48) 58%, rgba(246, 245, 241, 0.10) 100%)",
+              }}
+            />
 
-          <p className="mx-auto mt-6 max-w-2xl text-lg leading-relaxed text-muted sm:text-xl">
-            Klew maps your repository into a code graph in HydraDB, walks bounded structural paths
-            from a task, and returns a token-budgeted context pack with a{" "}
-            <strong className="font-medium text-ink">why-path thread</strong> for every file -
-            learning which paths lead to merged code.
-          </p>
-
-          <div className="mt-9 flex flex-wrap items-center justify-center gap-3.5">
-            <button
-              type="button"
-              onClick={onTry}
-              className="btn-soft inline-flex items-center gap-2.5 rounded-full bg-ink px-7 py-3.5 text-sm font-medium text-paper shadow-sm hover:bg-trail"
-            >
-              <span>Explore the Playground</span>
-              <span aria-hidden="true">→</span>
-            </button>
-            <button
-              type="button"
-              onClick={onResults}
-              className="btn-soft rounded-full border border-line bg-card px-6 py-3.5 text-sm font-medium text-ink hover:border-ink/40"
-            >
-              View Held-Out Evidence
-            </button>
-            <button
-              type="button"
-              onClick={() => onDocs("quickstart")}
-              className="btn-soft rounded-full px-5 py-3.5 text-sm font-medium text-muted hover:text-ink"
-            >
-              Read Docs
-            </button>
+            {/* Bottom Mist Blend into Page Background */}
+            <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-paper via-paper/55 to-transparent" />
           </div>
         </div>
 
-        {/* Interactive Thread Canvas */}
-        <div className="mt-14 sm:mt-18">
-          <LabyrinthHero />
+        {/* Foreground Content (Hero Copy + Labyrinth Graph) */}
+        <div className="relative z-10 -mt-[100vh]">
+          {/* Hero Headline & Actions: held stationary during the first 100px while the image expands */}
+          <div className="flex min-h-screen flex-col items-center justify-center px-frame pt-20 pb-12 text-center">
+            <div
+              style={{
+                transform: `translate3d(0, ${holdOffset}px, 0)`,
+              }}
+              className="mx-auto max-w-4xl will-change-transform"
+            >
+              <div className="inline-flex items-center rounded-full border border-line bg-card/90 px-4 py-1.5 font-mono text-xs text-ink shadow-2xs backdrop-blur-md">
+                <span>MCP Context Server for Coding Agents · Built on HydraDB</span>
+              </div>
+
+              <h1 className="mt-7 font-display text-[clamp(2.6rem,5.2vw,4.6rem)] font-semibold leading-[1.04] tracking-[-0.03em] text-ink drop-shadow-2xs">
+                Your codebase is a labyrinth.{" "}
+                <span className="text-trail">Klew is the thread.</span>
+              </h1>
+
+              <p className="mx-auto mt-6 max-w-2xl text-lg leading-relaxed text-ink-soft sm:text-xl">
+                Klew maps your repository into a code graph in HydraDB, walks bounded structural paths
+                from a task, and returns a token-budgeted context pack with a{" "}
+                <strong className="font-semibold text-ink">why-path thread</strong> for every file -
+                learning which paths lead to merged code.
+              </p>
+
+              <div className="mt-9 flex flex-wrap items-center justify-center gap-3.5">
+                <button
+                  type="button"
+                  onClick={onTry}
+                  className="btn-soft inline-flex items-center gap-2.5 rounded-full bg-ink px-7 py-3.5 text-sm font-medium text-paper shadow-sm hover:bg-trail"
+                >
+                  <span>Explore the Playground</span>
+                  <span aria-hidden="true">→</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={onResults}
+                  className="btn-soft rounded-full border border-line bg-card/90 px-6 py-3.5 text-sm font-medium text-ink backdrop-blur-md hover:border-ink/40"
+                >
+                  View Held-Out Evidence
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onDocs("quickstart")}
+                  className="btn-soft rounded-full bg-card/75 px-5 py-3.5 text-sm font-medium text-ink-soft backdrop-blur-md hover:text-ink"
+                >
+                  Read Docs
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Interactive Thread Canvas (rises over the expanded fixed hero image, then both scroll up together) */}
+          <div className="px-frame pt-28 pb-24 sm:pb-32">
+            <LabyrinthHero />
+          </div>
         </div>
       </section>
 

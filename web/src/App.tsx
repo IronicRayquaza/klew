@@ -20,6 +20,7 @@ function parseHash(h: string): { tab: Tab; sub?: string } {
 export default function App() {
   const [route, setRoute] = useState(() => parseHash(window.location.hash));
   const [copiedFooterCmd, setCopiedFooterCmd] = useState(false);
+  const [scrollY, setScrollY] = useState(0);
 
   useEffect(() => {
     document.documentElement.dataset.theme = "light";
@@ -27,8 +28,16 @@ export default function App() {
       setRoute(parseHash(window.location.hash));
       window.scrollTo({ top: 0, behavior: "smooth" });
     };
+    const onScroll = () => {
+      setScrollY(window.scrollY || window.pageYOffset || 0);
+    };
+    onScroll();
     window.addEventListener("hashchange", onHash);
-    return () => window.removeEventListener("hashchange", onHash);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      window.removeEventListener("hashchange", onHash);
+      window.removeEventListener("scroll", onScroll);
+    };
   }, []);
 
   const go = (t: Tab, sub?: string) => {
@@ -39,6 +48,11 @@ export default function App() {
 
   const tab = route.tab;
   const isPlayground = tab === "app";
+  const isLanding = tab === "landing";
+  const navBlurred = scrollY > 320;
+  // On Landing at scroll=0, inset the transparent navbar slightly so it sits directly inside the 90% rounded hero image
+  const heroExpandP = isLanding ? Math.min(1, Math.max(0, scrollY / 100)) : 1;
+  const navTopPx = isLanding ? Math.round(28 * (1 - heroExpandP)) : 0;
 
   const copyInstallCmd = () => {
     navigator.clipboard?.writeText("pip install klew && klew hydra up");
@@ -52,12 +66,17 @@ export default function App() {
         isPlayground ? "h-screen overflow-hidden" : "min-h-screen overflow-x-clip"
       }`}
     >
-      {/* Soft, Breathable Top Navigation */}
+      {/* Top Navigation (transparent on top of Hero image; slight blur later in page) */}
       <header
-        className={`sticky top-0 z-40 w-full transition-colors ${
+        style={!isPlayground ? { top: `${navTopPx}px` } : undefined}
+        className={`z-40 w-full transition-colors duration-300 ${
           isPlayground
-            ? "border-b border-line/70 bg-card/90 backdrop-blur-md px-5 sm:px-8"
-            : "bg-paper/85 backdrop-blur-md px-frame"
+            ? "sticky top-0 border-b border-line/70 bg-card/90 backdrop-blur-md px-5 sm:px-8"
+            : `fixed inset-x-0 px-frame ${
+                navBlurred
+                  ? "bg-paper/45 backdrop-blur-md border-b border-line/40"
+                  : "bg-transparent"
+              }`
         }`}
       >
         <div className="flex h-17 w-full items-center justify-between gap-4">
@@ -129,7 +148,15 @@ export default function App() {
       </header>
 
       {/* Main Content */}
-      <main className={isPlayground ? "relative w-full flex-1 overflow-hidden" : "w-full flex-1"}>
+      <main
+        className={
+          isPlayground
+            ? "relative w-full flex-1 overflow-hidden"
+            : isLanding
+              ? "w-full flex-1"
+              : "w-full flex-1 pt-17"
+        }
+      >
         {tab === "landing" && (
           <Landing
             onTry={() => go("app")}
@@ -142,10 +169,32 @@ export default function App() {
         {tab === "docs" && <Docs slug={route.sub} onNavigate={(s) => go("docs", s)} />}
       </main>
 
-      {/* Soft Architectural Card Footer (hidden on fullscreen Playground) */}
+      {/* Soft Architectural Card Footer over Full-Size Top-Masked footerBg1.webp */}
       {!isPlayground && (
-        <footer className="mt-24 w-full px-frame pb-12">
-          <div className="surface-card overflow-hidden p-8 sm:p-12 lg:p-14">
+        <footer className="relative mt-16 w-full overflow-hidden pt-28 pb-16">
+          {/* Full-Size Background Image with Top Masked Blend into Page Paper */}
+          <div
+            className="pointer-events-none absolute inset-0 z-0"
+            style={{
+              WebkitMaskImage:
+                "linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.28) 14%, rgba(0,0,0,0.75) 30%, black 46%)",
+              maskImage:
+                "linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.28) 14%, rgba(0,0,0,0.75) 30%, black 46%)",
+            }}
+          >
+            <img
+              src="/footerBg1.webp"
+              alt=""
+              aria-hidden="true"
+              className="h-full w-full object-cover object-left-bottom select-none"
+            />
+          </div>
+
+          {/* Extra Top Gradient Feather to Guarantee Seamless Mix with Page Background */}
+          <div className="pointer-events-none absolute inset-x-0 top-0 z-0 h-36 bg-gradient-to-b from-paper via-paper/65 to-transparent" />
+
+          <div className="relative z-10 px-frame">
+            <div className="surface-card overflow-hidden bg-card/82 p-8 backdrop-blur-md sm:p-12 lg:p-14">
             {/* Top Callout Strip */}
             <div className="flex flex-col justify-between gap-6 border-b border-line pb-10 lg:flex-row lg:items-center">
               <div>
@@ -331,6 +380,7 @@ export default function App() {
             <div className="flex flex-wrap items-center justify-between gap-4 border-t border-line pt-6 font-mono text-xs text-muted">
               <span>Klew · Graph Context Server for Coding Agents</span>
               <span>Zero vector lock-in · Deterministic why-paths</span>
+            </div>
             </div>
           </div>
         </footer>
