@@ -311,7 +311,7 @@ input[type="range"].klew-slider::-moz-range-thumb {
   background: var(--paper);
   border: 1px solid var(--line);
   border-radius: 1rem;
-  padding: 1.15rem 4.75rem 1.15rem 1.35rem;
+  padding: 1.15rem 1.35rem;
   overflow-x: auto;
 }
 .docs-body pre code {
@@ -451,4 +451,76 @@ input[type="range"].klew-slider::-moz-range-thumb {
 .klew-tour .driver-popover-footer button.klew-tour-skip:hover {
   color: var(--ink);
   background: transparent;
+}
+
+/* Docs code blocks: header bar with language + Copy, code below (the button never overlaps code) */
+.docs-body .docs-code {
+  border: 1px solid var(--line);
+  border-radius: 1rem;
+  background: var(--paper);
+  overflow: hidden;
+}
+.docs-body .docs-code-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.45rem 0.6rem 0.45rem 1.1rem;
+  border-bottom: 1px solid var(--line);
+  background: color-mix(in srgb, var(--paper) 60%, var(--card));
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--muted);
+}
+.docs-body .docs-code-copy {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--ink-soft);
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 0.2rem 0.75rem;
+  transition:
+    color 160ms ease,
+    border-color 160ms ease,
+    transform 160ms ease;
+}
+.docs-body .docs-code-copy:hover {
+  color: var(--ink);
+  border-color: var(--trail);
+}
+.docs-body .docs-code-copy:active {
+  transform: scale(0.96);
+}
+.docs-body .docs-code pre {
+  border: 0;
+  border-radius: 0;
+  margin: 0;
+}
+.docs-body code.docs-nowrap {
+  white-space: nowrap;
+}
+/* Long identifiers in tables (paths, URLs, comma lists) may break anywhere so the table still fits. */
+.docs-body .docs-table code:not(.docs-nowrap) {
+  overflow-wrap: anywhere;
+}
+.docs-body .docs-table {
+  overflow-x: auto;
+  border: 1px solid var(--line);
+  border-radius: 1rem;
+}
+.docs-body .docs-table table {
+  border: 0;
+  border-radius: 0;
+}
+@media (max-width: 640px) {
+  /* Narrow screens: keep columns readable and let the table scroll inside its box. */
+  .docs-body .docs-table th,
+  .docs-body .docs-table td {
+    min-width: 6.5rem;
+  }
+  .docs-body .docs-table td:last-child,
+  .docs-body .docs-table th:last-child {
+    min-width: 13rem;
+  }
 }

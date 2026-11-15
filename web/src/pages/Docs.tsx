@@ -81,17 +81,23 @@ export function Docs({
   useEffect(() => {
     const root = bodyRef.current;
     if (!root) return;
+    // Code blocks: a header bar (language + Copy) above the code, so the button never covers a line.
     root.querySelectorAll("pre").forEach((pre) => {
-      if (pre.querySelector("button")) return;
-      pre.style.position = "relative";
+      if (pre.parentElement?.classList.contains("docs-code")) return;
+      const code = pre.querySelector("code");
+      const lang = (code?.className.match(/language-([\w-]+)/)?.[1] ?? "").replace(/^(sh|shell|bash|zsh|console)$/, "shell");
+      const wrap = document.createElement("div");
+      wrap.className = "docs-code";
+      const bar = document.createElement("div");
+      bar.className = "docs-code-bar";
+      const label = document.createElement("span");
+      label.textContent = lang || "code";
       const btn = document.createElement("button");
       btn.type = "button";
       btn.textContent = "Copy";
-      btn.className =
-        "btn-soft absolute top-3 right-3 rounded-full border border-line bg-card px-3 py-1 font-mono text-[11px] text-muted shadow-2xs hover:border-trail hover:text-ink";
+      btn.className = "docs-code-copy";
       btn.addEventListener("click", () => {
-        const text = pre.querySelector("code")?.textContent ?? "";
-        navigator.clipboard.writeText(text).then(
+        navigator.clipboard.writeText(code?.textContent ?? "").then(
           () => {
             btn.textContent = "Copied";
             setTimeout(() => (btn.textContent = "Copy"), 1500);
@@ -101,7 +107,22 @@ export function Docs({
           },
         );
       });
-      pre.appendChild(btn);
+      bar.append(label, btn);
+      pre.replaceWith(wrap);
+      wrap.append(bar, pre);
+    });
+    // Short inline code (flags, names like --repo) never splits at a hyphen; long snippets may still wrap.
+    root.querySelectorAll(":not(pre) > code").forEach((c) => {
+      if (c.closest("h1, h2, h3, h4")) return;
+      if ((c.textContent ?? "").length <= 18) c.classList.add("docs-nowrap");
+    });
+    // Tables scroll sideways on narrow screens instead of squeezing columns.
+    root.querySelectorAll("table").forEach((t) => {
+      if (t.parentElement?.classList.contains("docs-table")) return;
+      const w = document.createElement("div");
+      w.className = "docs-table";
+      t.replaceWith(w);
+      w.append(t);
     });
   }, [html]);
 
@@ -186,7 +207,7 @@ export function Docs({
         </aside>
 
         {/* Center 7 Columns: Soft Article Card */}
-        <article className="min-w-0 lg:col-span-7">
+        <article className="min-w-0 lg:col-span-9 xl:col-span-7">
           <div className="surface-card p-7 sm:p-12">
             <div
               ref={bodyRef}
