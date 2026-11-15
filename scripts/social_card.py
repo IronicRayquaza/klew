@@ -177,7 +177,7 @@ h1 span{{color:{accent}}}
   <div class="stat"><div class="idx">02 / TOKEN EFFICIENCY</div><div class="v">{n["k_tph"] / 1000:.1f}k <em>vs {n["v_tph"] / 1000:.1f}k</em></div><div class="k">context tokens spent per correct file retrieved</div></div>
   <div class="stat"><div class="idx">03 / CONTINUAL LEARNING</div><div class="v" style="color:{moss}">+{n["learn"] * 100:.1f} <em>pts</em></div><div class="k">gained from learning on merged PR history, same graph</div></div>
 </div>
-<div class="foot"><span>Measured on {n["n"]} held-out commits of encode/{n["repo"]} (zero future leakage).</span><span>pip install klew · npx -y klew mcp</span></div>
+<div class="foot"><span>Measured on {n["n"]} held-out commits of encode/{n["repo"]} (zero future leakage).</span><span>pip install klew · npx -y klew-mcp mcp</span></div>
 </div></body></html>'''
 
 

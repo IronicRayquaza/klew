@@ -1,13 +1,37 @@
 {
-  "name": "klew",
+  "name": "klew-mcp",
   "version": "0.1.0",
   "description": "Self-improving code context for coding agents. MCP server that walks a code graph in HydraDB and learns from every merged PR. Launches the klew Python package via uvx.",
-  "keywords": ["mcp", "model-context-protocol", "mcp-server", "coding-agents", "code-graph", "context", "hydradb", "claude"],
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "mcp-server",
+    "coding-agents",
+    "code-graph",
+    "context",
+    "hydradb",
+    "claude"
+  ],
   "license": "MIT",
   "homepage": "https://github.com/IronicRayquaza/klew#readme",
-  "repository": { "type": "git", "url": "git+https://github.com/IronicRayquaza/klew.git", "directory": "packages/npm" },
-  "bugs": { "url": "https://github.com/IronicRayquaza/klew/issues" },
-  "bin": { "klew": "bin/klew.js" },
-  "files": ["bin/", "README.md", "LICENSE"],
-  "engines": { "node": ">=18" }
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/IronicRayquaza/klew.git",
+    "directory": "packages/npm"
+  },
+  "bugs": {
+    "url": "https://github.com/IronicRayquaza/klew/issues"
+  },
+  "bin": {
+    "klew-mcp": "bin/klew.js",
+    "klew": "bin/klew.js"
+  },
+  "files": [
+    "bin/",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=18"
+  }
 }

@@ -176,7 +176,7 @@ klew context "Raise ReadTimeout when stream times out"`;
   "mcpServers": {
     "klew": {
       "command": "npx",
-      "args": ["-y", "klew", "mcp"]
+      "args": ["-y", "klew-mcp", "mcp"]
     }
   }
 }`;

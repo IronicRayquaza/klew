@@ -5,7 +5,7 @@ Klew ships in four forms that share one Python package:
 | Form | Where | Install |
 |---|---|---|
 | Python package (CLI, MCP server, engine) | PyPI `klew` | `pip install klew` / `uvx klew` |
-| npm launcher (runs the PyPI package via uvx) | npm `klew` | `npx -y klew mcp` |
+| npm launcher (runs the PyPI package via uvx) | npm `klew-mcp` (npm blocks `klew` as too similar to kleur/klaw/knex) | `npx -y klew-mcp mcp` |
 | Claude Code plugin (MCP server + skill) | this repo (`.claude-plugin/marketplace.json`) | `/plugin install klew --marketplace IronicRayquaza/klew` |
 | Claude Desktop extension | `klew.mcpb` attached to a GitHub release | double-click the file |
 
@@ -37,7 +37,7 @@ uvx --refresh klew --help      # confirm it installs from PyPI
 ```bash
 npm login                      # once
 cd packages/npm && npm publish --access public
-npx -y klew --help             # confirm
+npx -y klew-mcp --help             # confirm
 ```
 
 ## 4. Claude Desktop extension

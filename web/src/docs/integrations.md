@@ -8,7 +8,7 @@ Klew is one engine with several front doors. Pick the one that fits how your tea
 |---|---|---|
 | [Claude Code plugin](#docs/mcp) | Claude Code | `/plugin install klew --marketplace IronicRayquaza/klew` |
 | [Claude Desktop extension](#docs/mcp) | Claude Desktop | `klew.mcpb` from the GitHub release |
-| [MCP server](#docs/mcp) | Cursor, Windsurf, any MCP client | `npx -y klew mcp` or `uvx klew mcp` |
+| [MCP server](#docs/mcp) | Cursor, Windsurf, any MCP client | `npx -y klew-mcp mcp` or `uvx klew mcp` |
 | [CLI](#docs/cli) | developers and scripts | `pip install klew` |
 | [REST API](#docs/api) | internal tools, dashboards, other agents | `klew serve` |
 | [GitHub Action](#docs/github-action) | learning from every merged PR | `action/` in the repo |

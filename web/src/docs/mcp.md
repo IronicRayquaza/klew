@@ -30,7 +30,7 @@ Add a server entry to the client's MCP config. For Cursor that's `.cursor/mcp.js
   "mcpServers": {
     "klew": {
       "command": "npx",
-      "args": ["-y", "klew", "mcp"],
+      "args": ["-y", "klew-mcp", "mcp"],
       "env": { "KLEW_REPO_ROOT": "/absolute/path/to/your-repo" }
     }
   }

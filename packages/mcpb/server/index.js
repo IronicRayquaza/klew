@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Klew launcher: runs the Python package (PyPI "klew") with uvx, so `npx -y klew mcp` works anywhere.
+// Klew launcher: runs the Python package (PyPI "klew") with uvx, so `npx -y klew-mcp mcp` works anywhere.
 // The same file is the entry point of the Claude Desktop extension (.mcpb).
 'use strict'
 const { spawn } = require('node:child_process')

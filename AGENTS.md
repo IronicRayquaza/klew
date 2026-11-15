@@ -166,7 +166,7 @@ Status: ✅ done · 🟡 in progress · ⬜ todo
     start-up warm-up (0.76 s at 0.5 CPU, 0.31 s at 1 CPU). The walk's ~25 HydraDB queries are CPU-bound.
 - **2026-11-15 H17: distribution ready (not yet published).** See `docs/PUBLISHING.md`.
   - PyPI `klew` (wheel + 48 KB sdist; `pip install klew`), with new `klew hydra up/down/status` (local HydraDB in Docker).
-  - npm `klew`: `packages/npm/bin/klew.js` launcher → `uvx --from klew==<ver> klew …` (falls back to pipx/klew; finds uv
+  - npm `klew-mcp` (npm refuses `klew`: too similar to kleur/klaw/knex): `packages/npm/bin/klew.js` launcher → `uvx --from klew==<ver> klew …` (falls back to pipx/klew; finds uv
     outside PATH for GUI apps). `KLEW_PY_SPEC` overrides the spec for local testing.
   - Claude Code plugin: `.claude-plugin/marketplace.json` + `plugins/klew` (MCP server + `klew` skill); passes `claude plugin validate`.
   - Claude Desktop extension: `packages/mcpb` (node type, same launcher, folder picker) → `dist/klew.mcpb`; schema-valid.

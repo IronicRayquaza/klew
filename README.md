@@ -193,7 +193,7 @@ and double-click it. It asks for your repository folder.
 **Cursor, Windsurf and other MCP clients**:
 
 ```json
-{ "mcpServers": { "klew": { "command": "npx", "args": ["-y", "klew", "mcp"],
+{ "mcpServers": { "klew": { "command": "npx", "args": ["-y", "klew-mcp", "mcp"],
                             "env": { "KLEW_REPO_ROOT": "/absolute/path/to/your/repo" } } } }
 ```
 
