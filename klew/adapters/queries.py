@@ -67,6 +67,21 @@ def delete_repo(label: str) -> str:
     return f"MATCH (n:{label}) WHERE n.repo = $repo DETACH DELETE n"
 
 
+def _lit(values) -> str:
+    """Procedure maps take literals only, so lists are inlined and escaped."""
+    return "[" + ", ".join("'" + str(v).replace("\\", "\\\\").replace("'", "\\'") + "'" for v in values) + "]"
+
+
+def ms_paths(src_label: str, src_keys, dst_label: str, dst_keys, rel_types, max_len: int) -> str:
+    """HydraDB's native multi-source path search (GraphBLAS), anchored on the string `key` property."""
+    return (
+        f"CALL algo.MSpaths({{sourceLabel: '{src_label}', sourceProperty: 'key', sourceValues: {_lit(src_keys)}, "
+        f"targetLabel: '{dst_label}', targetProperty: 'key', targetValues: {_lit(dst_keys)}, "
+        f"relTypes: {_lit(rel_types)}, relDirection: 'both', maxLen: {int(max_len)}}}) "
+        "YIELD path RETURN path"
+    )
+
+
 def shortest_paths(e: EdgeType) -> str:
     # Procedure maps take scalars only; lists are inlined literals.
     return (

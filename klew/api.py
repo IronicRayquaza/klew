@@ -81,7 +81,7 @@ class Subgraph(BaseModel):
 
 @app.get("/api/health")
 def health() -> dict:
-    return {"status": "ok"}
+    return {"status": "ok", "demo": os.environ.get("KLEW_DEMO") == "1"}
 
 
 @app.get("/api/repos")
@@ -111,6 +111,18 @@ def outcome(req: OutcomeRequest) -> LearnReport:
         return eng.record_outcome(req.run_id, req.touched_files)
     except KeyError as e:
         raise HTTPException(404, str(e)) from e
+
+
+class ExplainRequest(BaseModel):
+    repo: str
+    task: str = Field(min_length=3, max_length=2000)
+    path: str = Field(max_length=500)
+
+
+@app.post("/api/explain")
+def explain(req: ExplainRequest) -> dict:
+    """Native HydraDB paths (algo.MSpaths) from the task's best matches to a file, plus learned links."""
+    return get_runtime().engine(req.repo).explain(req.task, req.path)
 
 
 @app.get("/api/runs")

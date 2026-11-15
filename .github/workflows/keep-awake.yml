@@ -1,0 +1,12 @@
+# Free hosting tiers sleep when idle. Ping the hosted demo every 10 minutes so judges never wait for a cold start.
+# Set the repository variable KLEW_DEMO_URL (Settings → Secrets and variables → Actions → Variables).
+name: keep-awake
+on:
+  schedule: [{ cron: "*/10 * * * *" }]
+  workflow_dispatch:
+jobs:
+  ping:
+    if: vars.KLEW_DEMO_URL != ''
+    runs-on: ubuntu-latest
+    steps:
+      - run: curl -fsS --max-time 60 "${{ vars.KLEW_DEMO_URL }}/api/health" || curl -fsS --max-time 90 "${{ vars.KLEW_DEMO_URL }}/api/health"

@@ -27,6 +27,11 @@ export type EvalResult = {
   summary_held_out?: Record<string, ArmSummary> | null
   tuned_on_first?: number
   tuning_repo?: string
+  ci_held_out?: {
+    n: number
+    comparisons: { a: string; b: string; label: string
+      metrics: Record<string, { diff: number; lo: number; hi: number; significant: boolean }> }[]
+  }
   slices?: { tuning: { commits: number; from: string | null; to: string | null }; held_out: { commits: number; from: string | null; to: string | null } }
   held_out_commits?: number
   agent_view_held_out?: {
@@ -53,7 +58,7 @@ async function call<T>(path: string, init?: RequestInit): Promise<T> {
 }
 
 export const api = {
-  health: () => call<{ status: string }>('/api/health'),
+  health: () => call<{ status: string; demo?: boolean }>('/api/health'),
   repos: () => call<Repo[]>('/api/repos'),
   stats: (repo: string) => call<GraphStats>(`/api/stats?repo=${encodeURIComponent(repo)}`),
   context: (repo: string, task: string, budget_tokens: number) =>

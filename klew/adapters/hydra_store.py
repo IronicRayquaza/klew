@@ -123,6 +123,20 @@ class HydraGraphStore:
         rows = self._run(Q.count_edges(etype), repo=repo)
         return int(rows[0]["c"]) if rows else 0
 
+    def key_paths(self, repo: str, src_label: str, src_keys, dst_label: str, dst_keys, rel_types,
+                  max_len: int = 3, limit: int = 5) -> list[list]:
+        """Native algo.MSpaths between nodes named by `key`. Keys repeat across repos, so only paths whose
+        nodes all belong to `repo` are kept. Each path alternates node dicts and relationship-type strings."""
+        rows = self._run(Q.ms_paths(src_label, list(src_keys), dst_label, list(dst_keys), list(rel_types), max_len))
+        out = []
+        for r in rows:
+            path = r["path"]
+            nodes = [x for x in path if isinstance(x, dict)]
+            if nodes and all(n.get("repo") == repo for n in nodes):
+                out.append(path)
+        out.sort(key=len)
+        return out[:limit]
+
     def shortest_paths(self, etype: EdgeType, src: int, dst: int, max_len: int, k: int) -> list[list[Row]]:
         rows = self._run(Q.shortest_paths(etype), src=src, dst=dst, max_len=max_len, k=k)
         return [[x for x in r["path"] if isinstance(x, dict)] for r in rows]

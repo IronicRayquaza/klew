@@ -14,6 +14,11 @@ the graph which paths actually led to the code that changed, so the next map is 
 <!-- RESULTS:START -->
 ## Results
 
+**In one line:** on every repository, Klew puts the right file in the agent's context 31–47 points more often
+than vector RAG at the same budget (statistically significant everywhere), and learning from the repo's history
+significantly improves ranking on all three. On ranking alone, Klew with vector seeds beats vector RAG
+significantly on httpx and flask; on ODS only its MRR gain is significant.
+
 **How to read these numbers.** *Right file in context*: share of changed files inside the 2,000-token
 pack, which is what the agent reads (our headline). *Tokens per correct file*: context tokens spent per
 changed file found (lower is cheaper). *Recall@5*: share of changed files in the top five. *Top-1*: how
@@ -32,6 +37,15 @@ tuning (`scripts/tune.py`), and these are the rest. Every approach gets the same
 | Klew without graph traversal | 87.6% | 675 | 65.5% | 49.2% | 62.8% |
 | **Klew** | 88.9% | 2,025 | 65.4% | 50.7% | 63.6% |
 | **Klew + vector seeds** | 95.3% | 1,986 | 67.3% | 56.8% | 68.8% |
+
+**Key comparisons** (paired 95% bootstrap intervals over these commits; ✓ = the interval excludes 0):
+
+| Comparison | Right file in context | Recall@5 | Top-1 | MRR |
+|---|---|---|---|---|
+| Klew + vector seeds vs vector RAG | +37.2 [+31.7, +43.1] ✓ | +3.4 [+0.1, +6.9] ✓ | +9.5 [+2.5, +16.6] ✓ | +6.6 [+2.5, +10.9] ✓ |
+| Klew vs vector RAG | +30.9 [+24.8, +36.8] ✓ | +1.5 [-3.9, +6.3] | +3.5 [-4.0, +11.1] | +1.4 [-3.7, +6.7] |
+| Learning on vs off | +5.6 [+1.7, +9.7] ✓ | +9.4 [+4.8, +13.9] ✓ | +6.0 [+1.5, +10.1] ✓ | +6.7 [+3.4, +10.1] ✓ |
+| Graph walk on vs off | +1.4 [-0.7, +3.7] | -0.1 [-0.8, +0.5] | +1.5 [+0.0, +3.5] | +0.8 [-0.2, +2.0] |
 
 - **Learning** (same graph, learning off vs on): +5.6 pts right file in context.
 - **Graph traversal** (Klew with vs without the walk): +1.4 pts right file in context, +1.5 pts top-1.
@@ -53,6 +67,15 @@ tuning (`scripts/tune.py`), and these are the rest. Every approach gets the same
 | **Klew** | 89.0% | 2,020 | 60.6% | 43.9% | 57.1% |
 | **Klew + vector seeds** | 91.6% | 2,087 | 60.1% | 46.4% | 58.4% |
 
+**Key comparisons** (paired 95% bootstrap intervals over these commits; ✓ = the interval excludes 0):
+
+| Comparison | Right file in context | Recall@5 | Top-1 | MRR |
+|---|---|---|---|---|
+| Klew + vector seeds vs vector RAG | +46.5 [+40.4, +52.2] ✓ | +11.3 [+6.7, +16.2] ✓ | +9.7 [+3.1, +16.3] ✓ | +9.3 [+4.7, +14.1] ✓ |
+| Klew vs vector RAG | +43.9 [+37.9, +50.4] ✓ | +11.8 [+5.4, +18.4] ✓ | +7.1 [+0.0, +14.3] | +8.0 [+2.5, +13.3] ✓ |
+| Learning on vs off | +4.3 [+1.1, +7.8] ✓ | +12.1 [+6.9, +17.6] ✓ | +6.1 [+0.5, +11.7] ✓ | +7.4 [+3.6, +11.4] ✓ |
+| Graph walk on vs off | +4.9 [+1.5, +8.6] ✓ | +0.6 [-0.5, +2.0] | -0.5 [-1.5, +0.0] | +0.3 [-0.5, +0.9] |
+
 - **Learning** (same graph, learning off vs on): +4.3 pts right file in context.
 - **Graph traversal** (Klew with vs without the walk): +4.9 pts right file in context, -0.5 pts top-1.
 
@@ -72,6 +95,15 @@ tuning (`scripts/tune.py`), and these are the rest. Every approach gets the same
 | Klew without graph traversal | 76.9% | 1,206 | 46.6% | 41.6% | 53.3% |
 | **Klew** | 72.4% | 2,702 | 47.3% | 41.6% | 53.5% |
 | **Klew + vector seeds** | 71.9% | 2,753 | 48.3% | 45.8% | 57.2% |
+
+**Key comparisons** (paired 95% bootstrap intervals over these commits; ✓ = the interval excludes 0):
+
+| Comparison | Right file in context | Recall@5 | Top-1 | MRR |
+|---|---|---|---|---|
+| Klew + vector seeds vs vector RAG | +36.9 [+31.8, +42.3] ✓ | +3.1 [-0.5, +6.8] | +6.6 [-0.6, +13.9] | +5.9 [+1.3, +10.2] ✓ |
+| Klew vs vector RAG | +37.5 [+30.3, +44.1] ✓ | +2.1 [-5.2, +9.4] | +2.4 [-6.0, +10.8] | +2.2 [-3.8, +8.4] |
+| Learning on vs off | +3.1 [-2.1, +8.4] | +6.0 [+2.3, +10.2] ✓ | +7.8 [+4.2, +12.0] ✓ | +6.9 [+4.2, +9.6] ✓ |
+| Graph walk on vs off | -4.4 [-9.0, +0.1] | +0.6 [-0.6, +2.1] | +0.0 [+0.0, +0.0] | +0.1 [-0.7, +1.0] |
 
 - **Learning** (same graph, learning off vs on): +3.1 pts right file in context.
 - **Graph traversal** (Klew with vs without the walk): -4.4 pts right file in context, +0.0 pts top-1.
@@ -130,6 +162,9 @@ Latency: Klew answers in about 0.2–0.4 s per request versus about 15 ms for a 
   queries per context pack, run in parallel within each hop: about 0.2–0.3 s on httpx (warm-started
   graph, laptop, Docker).
 - **Learning writes back in place:** batched `UNWIND … MERGE (s)-[r:POINTS_TO {id: row.eid}]->(d) SET r.w = row.w`.
+- **Native path search for explanations:** `explain` calls HydraDB's `algo.MSpaths` (GraphBLAS) to find the paths
+  through the code from a task's best matches to a file, e.g. `_get_proxy_map` → calls → `get_environment_proxies`
+  → contained in → `httpx/_utils.py`.
 - **Run history as a graph:** every context request becomes a `KlewRun` with `SERVED` and `TOUCHED` edges, an
   audit trail of what the agent was shown and what it changed.
 - All Cypher lives in [`klew/adapters/queries.py`](klew/adapters/queries.py), with the dialect

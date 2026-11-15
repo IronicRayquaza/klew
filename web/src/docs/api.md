@@ -12,6 +12,7 @@ and the OpenAPI schema is at `/openapi.json`. The dashboard uses this API, and y
 | `GET` | `/api/stats?repo=` | Files, symbols, learned terms, runs, edges by type |
 | `POST` | `/api/context` | Get a context pack |
 | `POST` | `/api/outcome` | Record what a run changed, so the graph learns |
+| `POST` | `/api/explain` | Why a file matters for a task: native HydraDB paths plus learned links. Body: `repo`, `task`, `path` |
 | `GET` | `/api/runs?repo=&limit=50` | Recent runs, newest first, with the files served |
 | `GET` | `/api/runs/{run_id}/subgraph` | Nodes and links along a run's why-paths (for graph views) |
 | `GET` | `/api/eval` | Evaluation results available on this server |

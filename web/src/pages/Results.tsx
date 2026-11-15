@@ -42,6 +42,48 @@ function Table({ r, summary }: { r: EvalResult; summary: Record<string, ArmSumma
   )
 }
 
+function Comparisons({ r }: { r: EvalResult }) {
+  const ci = r.ci_held_out
+  if (!ci) return null
+  const cols: [string, string][] = [['budget_recall', 'Right file in context'], ['recall@5', 'Recall@5'], ['hit@1', 'Top-1'], ['mrr', 'MRR']]
+  const f = (x: number) => `${x >= 0 ? '+' : ''}${(x * 100).toFixed(1)}`
+  return (
+    <div className="grid gap-2">
+      <div className="flex flex-wrap items-baseline justify-between gap-2">
+        <h3 className="font-bold">Key comparisons</h3>
+        <span className="text-xs text-muted">difference in points, with a paired 95% interval over {ci.n} commits</span>
+      </div>
+      <div className="overflow-x-auto rounded-xl border border-line bg-card">
+        <table className="w-full text-sm tabular">
+          <thead>
+            <tr className="text-left">
+              <th className="eyebrow px-4 py-3">Comparison</th>
+              {cols.map(([k, l]) => <th key={k} className="eyebrow px-4 py-3 text-right">{l}</th>)}
+            </tr>
+          </thead>
+          <tbody>
+            {ci.comparisons.map((c) => (
+              <tr key={c.label} className="border-t border-line">
+                <td className="px-4 py-2.5 whitespace-nowrap">{c.label}</td>
+                {cols.map(([k]) => {
+                  const v = c.metrics[k]
+                  return (
+                    <td key={k} className="px-4 py-2.5 text-right whitespace-nowrap">
+                      <span className={`font-mono ${v.significant ? (v.diff > 0 ? 'font-semibold text-moss' : 'font-semibold text-alarm') : 'text-muted'}`}>{f(v.diff)}</span>
+                      <span className="ml-1.5 font-mono text-xs text-muted">[{f(v.lo)}, {f(v.hi)}]</span>
+                    </td>
+                  )
+                })}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <p className="text-xs text-muted">Bold green: the whole interval is above zero, so the difference is real at 95% confidence. Grey: the interval includes zero, so we can't call it a win or a loss.</p>
+    </div>
+  )
+}
+
 function HowWeTest({ results }: { results: EvalResult[] | null }) {
   const t = results?.find((r) => r.repo === (r.tuning_repo ?? 'httpx'))
   const tune = t?.slices?.tuning, held = t?.slices?.held_out
@@ -86,6 +128,7 @@ function HowToRead() {
     ['Top-1', 'How often the #1 file is one that changed.'],
     ['MRR', 'Mean reciprocal rank: 1 if the first correct file is #1, ½ at #2, ⅓ at #3, and so on. It rewards putting the right file first.'],
     ['p50 latency', 'Median time per request.'],
+    ['95% interval', 'We resample the held-out commits 2,000 times to see how much a number could move by chance. If a difference stays above zero in 95% of resamples, it is a real difference, not luck.'],
   ]
   return (
     <section className="grid gap-3 rounded-xl border border-line bg-card p-5">
@@ -167,6 +210,7 @@ export default function Results() {
             </div>
           )}
           <Table r={r} summary={summary} />
+          <Comparisons r={r} />
           <div className="grid gap-4 md:grid-cols-2">
             {learnGain !== null && (
               <div className="grid content-start gap-2 rounded-xl border border-line bg-card p-4">

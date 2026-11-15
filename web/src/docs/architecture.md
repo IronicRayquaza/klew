@@ -22,7 +22,7 @@ adapters     HydraGraphStore (Bolt) · MemoryGraphStore · tree-sitter reader ·
 | Traversal | one anchored 1-hop expansion per edge type and direction: `MATCH (a:KlewSymbol)<-[r:CALLS]-(b) WHERE a.id IN $ids RETURN a.id, b.id, r.w` |
 | Learning | weights written back in place with batched `MERGE … SET r.w, r.hits, r.misses` |
 | Audit trail | each request is a `KlewRun` node with `SERVED` and `TOUCHED` edges |
-| Explanations | `algo.SPpaths` is available through `GraphStore.shortest_paths` |
+| Explanations | `explain` runs HydraDB's native multi-source path search, `algo.MSpaths`, from the task's best direct matches to the file over `CALLS`, `CONTAINS`, `TESTS`, `INHERITS` and `IMPORTS`, anchored on each node's string `key` |
 
 A context pack on a warm-started httpx graph takes 25 queries and about 0.2–0.3 s on a laptop. Each hop's
 queries run in parallel, one Bolt session per thread (before that change: median 540 ms). Indexing writes about

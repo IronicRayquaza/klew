@@ -86,6 +86,8 @@ Status: ✅ done · 🟡 in progress · ⬜ todo
 | `eval/results/` | eval | ✅ | final httpx + flask results (5 arms); charts in `docs/img/` |
 | `action/`, `.github/workflows/` | product | ✅ | learn-on-merge Action, example workflow, CI (ruff, pytest, live HydraDB, web build); CI not yet run on GitHub |
 | `scripts/` | tooling | ✅ | `tune.py` (held-in grid), `readme_results.py`, `snapshot_web.py` |
+| `klew/eval/stats.py` | eval | ✅ | paired bootstrap CIs → `ci_held_out` |
+| `Dockerfile.demo`, `deploy/demo-*.sh`, `render.yaml` | deploy | ✅ | single-container hosted demo (Render Free); see `docs/DEPLOY.md` |
 | `README.md`, `JUDGES.md`, `docs/VIDEO.md` | docs | ✅ | README results come from the JSON via `scripts/readme_results.py` |
 
 ## Conventions
@@ -119,6 +121,19 @@ Status: ✅ done · 🟡 in progress · ⬜ todo
 
 ## Latest changes (newest first)
 
+- **2026-11-15 H18: confidence intervals, native MSpaths explain, hosted demo container.**
+  - `klew/eval/stats.py`: paired bootstrap 95% CIs (2,000 resamples) for the key comparisons, stored as
+    `ci_held_out` in every `eval/results/*.json` (`scripts/annotate_results.py`). Shown in the README ("Key
+    comparisons") and on the Results page (Comparisons panel). They corrected our claims: see Known issues.
+  - `explain` (MCP + `POST /api/explain`) now finds paths with native `algo.MSpaths` (`queries.ms_paths`,
+    `GraphStore.key_paths`, memory-store BFS twin, contract test). Example: `BaseClient._get_proxy_map -CALLS->
+    get_environment_proxies -CONTAINS-> httpx/_utils.py`. 29 tests pass against live HydraDB.
+  - Hosted demo: `Dockerfile.demo` = one container (HydraDB on loopback + `klew serve` + built site), httpx and
+    flask indexed and warm-started at build time. `deploy/demo-{env,build,start}.sh`, `render.yaml` (Render
+    Free blueprint), `.github/workflows/keep-awake.yml` (pings `vars.KLEW_DEMO_URL` every 10 min),
+    `docs/DEPLOY.md`. `/api/health` returns `demo: true`, and the dashboard then shows a slow-server banner.
+  - Tested under Render Free limits (512 MB, 0.1 CPU): ready in ~6 s, ~160 MB RAM, ~8.5 s per query after the
+    start-up warm-up (0.76 s at 0.5 CPU, 0.31 s at 1 CPU). The walk's ~25 HydraDB queries are CPU-bound.
 - **2026-11-15 H17: distribution ready (not yet published).** See `docs/PUBLISHING.md`.
   - PyPI `klew` (wheel + 48 KB sdist; `pip install klew`), with new `klew hydra up/down/status` (local HydraDB in Docker).
   - npm `klew`: `packages/npm/bin/klew.js` launcher → `uvx --from klew==<ver> klew …` (falls back to pipx/klew; finds uv
@@ -253,20 +268,25 @@ Status: ✅ done · 🟡 in progress · ⬜ todo
   - The why-path force graph clips nodes at its edges; consider fitting the view after layout (`zoomToFit`).
   - Keep every number sourced from `eval/results/*.json` (snapshot: `scripts/snapshot_web.py`). Never hard-code results.
   - Check at 390px and 1280px in both themes; the page must not scroll horizontally.
-- **Everyone:** confirm submission rules on Discord; make the repo public before submitting; record the
-  video (`docs/VIDEO.md`); deploy `web/` as a static site.
+- **Owner: go live on Render.** Push, then Render → New → Blueprint → `IronicRayquaza/klew` (uses
+  `render.yaml`). Once live, set the repo Actions variable `KLEW_DEMO_URL` so keep-awake pings it.
+- **Everyone:** make the repo public before submitting; record the Loom (`docs/VIDEO.md`, update numbers to
+  H15/H16 + CIs); publish packages (`docs/PUBLISHING.md`); X/LinkedIn posts tagging HydraDB.
 - **A:** relevance cutoff (stop packing when score < x% of top; tune held-in), budget sweep chart
-  (500–4,000 tokens, vector vs Klew), faster walk (parallel expansions / `algo.MSpaths`), budget presets
+  (500–4,000 tokens, vector vs Klew), budget presets
   (Lean 1k / Balanced 2k / Deep 4k). Optional: TypeScript parsing, a third eval repo.
 
 ## Known issues / open questions
 
 - The Luma page doesn't list submission requirements. Confirm on Discord.
-- **Claims to make (current, held-out, three repos):** right file in context 72–95% vs 35–58% at about half the tokens
-  per correct file. Klew beats vector RAG on every quality metric on httpx, flask and ODS, with or without vector
-  seeds (httpx top-1 56.8% vs 47.2%). Slower: ~0.3 s (httpx) to ~0.9 s (ODS) vs ~15–45 ms. On ODS the walk
-  costs context (no-walk is higher); say so if asked.
-  Latency ~0.2–0.4 s vs ~15 ms. Don't claim "beats vector on every metric".
+- **Claims to make (held-out, three repos, paired 95% bootstrap CIs in `ci_held_out`):**
+  - Right file in context 72–95% vs 35–58%, +31 to +47 pts vs vector RAG, significant on every repo, about half
+    the tokens per correct file.
+  - Learning significantly improves recall@5, top-1 and MRR on all three repos.
+  - Ranking vs vector RAG: with vector seeds, significant on httpx and flask (httpx top-1 +9.5 [+2.5, +16.6]); on
+    ODS only MRR. Without vector seeds: level on httpx and ODS.
+  - Slower: ~0.3 s (httpx) to ~0.9 s (ODS) vs ~15–45 ms. On ODS the walk costs some context.
+  - **Don't claim "beats vector on every metric".**
 - The demo `httpx` graph has a few learned outcomes from testing (e.g. 'cidr' → `_utils.py`). The landing hero
   shows that output and says so. Re-index for a clean graph.
 - `algo.MSpaths` needs string `sourceValues`, and our ids are ints. Not used; the walker uses 1-hop expansion.

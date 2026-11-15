@@ -48,7 +48,7 @@ Before first use, run `uvx klew hydra up` and `uvx klew index /path/to/your-repo
 |---|---|---|
 | `get_context` | `task: str`, `budget_tokens: int = 2000`, `cutoff: float = 0` | Returns the files most likely to matter for the task, each with its why-path, signatures and a snippet, inside the budget. Starts with a `run_id`. `cutoff` stops early on weak candidates to save tokens ([trade-off](#docs/cli)). |
 | `record_outcome` | `run_id: int`, `touched_files: list[str] \| None` | Tells the graph which files the run changed. Without `touched_files`, it uses the working tree's changed `.py` files from `git status`. Returns what it learned. |
-| `explain` | `task: str`, `path: str` | Shows the learned links from the task's words to that file, with weights, hits and misses. |
+| `explain` | `task: str`, `path: str` | Shows why a file matters: paths through the code from the task's best matches to the file, found by HydraDB's native path search (`algo.MSpaths`), plus the learned links from the task's words, with weights, hits and misses. |
 | `graph_stats` | none | Counts of files, symbols, learned terms, runs, and edges by type. |
 
 There is deliberately **no raw Cypher tool**, so an agent can't write arbitrary data into the graph.

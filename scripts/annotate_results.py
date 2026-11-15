@@ -3,12 +3,14 @@ import json
 from pathlib import Path
 
 from klew.eval.replay import agent_view, slice_dates
+from klew.eval.stats import intervals
 
 for p in sorted(Path("eval/results").glob("*.json")):
     d = json.loads(p.read_text())
     held = [r for r in d["records"] if r["i"] >= d.get("tuned_on_first", 100)]
     d["agent_view_held_out"] = agent_view(held, d["arms"])
     d["tuning_repo"] = "httpx"
+    d["ci_held_out"] = intervals(held, d["arms"])
     d["slices"] = slice_dates(Path(d["source"]), d["records"], d.get("tuned_on_first", 100))
     p.write_text(json.dumps(d, indent=1))
     v = d["agent_view_held_out"]

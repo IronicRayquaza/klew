@@ -56,6 +56,10 @@ class GraphStore(Protocol):
     def delete_repo(self, repo: str) -> None:
         ...
 
+    def key_paths(self, repo: str, src_label: str, src_keys, dst_label: str, dst_keys, rel_types,
+                  max_len: int = 3, limit: int = 5) -> list[list]:
+        """Native path search (HydraDB algo.MSpaths) between nodes named by their `key` property."""
+
     def shortest_paths(self, etype: EdgeType, src: int, dst: int, max_len: int, k: int) -> list[list[Row]]:
         """Native path procedure (HydraDB algo.SPpaths). Returns node property maps per path."""
 

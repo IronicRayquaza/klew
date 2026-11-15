@@ -78,12 +78,16 @@ The live tables and learning curves are on the [Results](#results) page. They're
 - Commit messages are terser than real agent prompts.
 - We score Python files only, and static call resolution is best-effort.
 - Parameters were tuned on the first 100 commits of httpx only. The held-out numbers exclude them.
-- Held-out, Klew beats vector RAG on every quality metric on all three repositories, with or without vector
-  seeds. The margin is largest on what fits in the budget: the right file in context 72–95% vs 35–58%.
+- The clearest result is what fits in the budget: the right file in context 72–95% vs 35–58%, 31–47 points
+  ahead of vector RAG on every repository, all statistically significant (paired 95% bootstrap intervals).
+- Ranking is closer. With vector seeds, Klew beats vector RAG significantly on httpx and flask; on ODS only
+  MRR is significant. Without vector seeds, Klew's ranking is level with vector RAG on httpx and ODS.
+- Learning significantly improves recall@5, top-1 and MRR on all three repositories.
 - The ablation shaped the design. The graph walk adds coverage (more right files in context) but, used
   alone to order the list, it cost precision at the top. Klew now ranks in two stages: direct evidence
   (task words, learned links, text) picks the top five files, and the walk fills the rest of the budget.
-- Latency is higher: about 0.2–0.4 s per request versus about 15 ms for a vector lookup.
+- Latency is higher: about 0.3 s per request on httpx and 0.9 s on ODS, versus about 15–45 ms for a vector
+  lookup.
 
 ## Reproduce
 

@@ -24,9 +24,10 @@ that keep being served but not touched decay, and sweeping changes of more than 
 **Does it replace vector search?**
 It doesn't have to. On held-out commits Klew gets the changed file into the agent's context far more
 often than vector RAG (72–95% vs 35–58% across three repositories), at about half the tokens per correct file,
-and it also ranks better: on httpx, top-1 56.8% vs 47.2% and MRR 68.8% vs 62.2%; on flask, top-1
-46.4% vs 36.7%; on ODS, top-1 45.8% vs 39.2%. That holds even without vector seeds. Using vector results as extra seeds is still
-the strongest setup. The cost is latency: about 0.2–0.4 s per request versus about 15 ms for a
+a difference that is statistically significant on every repository. Ranking is closer: with vector results as
+extra seeds, Klew ranks the right file higher than vector RAG with significance on httpx and flask (top-1 56.8%
+vs 47.2% on httpx); on ODS only its MRR gain is significant. Without vector seeds, Klew's ranking is level with
+vector RAG on httpx and ODS. So the strongest setup is both together. The cost is latency: about 0.2–0.4 s per request versus about 15 ms for a
 vector lookup. See [Evaluation](#docs/evaluation).
 
 **How fast is it?**

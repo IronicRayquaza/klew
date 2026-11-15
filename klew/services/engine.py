@@ -207,6 +207,30 @@ class RepoEngine:
         merged = [by_walk.get(r.file_id, r) for r in top]
         return merged + [r for r in walked if r.file_id not in top_ids]
 
+    PATH_TYPES = ("CALLS", "CONTAINS", "TESTS", "INHERITS", "IMPORTS")
+
+    def explain(self, task: str, path: str, max_paths: int = 3) -> dict:
+        """Why `path` is relevant to `task`: native HydraDB paths (algo.MSpaths) from the task's best direct
+        matches to the file, plus what learning has linked from the task's words to it."""
+        fid = self.fid_of.get(path)
+        if fid is None:
+            return {"path": path, "known": False, "paths": [], "learned": []}
+        seeds = seeder.lexical_seeds(self.lexicon, task, k=6)
+        sym_keys = [self.sym_key[s.node_id] for s in seeds if s.node_id in self.sym_key]
+        file_keys = [self.path_of[s.node_id] for s in seeds if s.node_id in self.path_of and s.node_id != fid]
+        found = []
+        if sym_keys:
+            found += self.store.key_paths(self.repo, SYMBOL, sym_keys, FILE, [path], self.PATH_TYPES, 3, max_paths)
+        if file_keys and len(found) < max_paths:
+            found += self.store.key_paths(self.repo, FILE, file_keys, FILE, [path], self.PATH_TYPES, 3, max_paths)
+        rendered = [[x if isinstance(x, str) else x.get("key", "?") for x in p] for p in found]
+        terms = seeder.task_terms(task)
+        pairs = [(ids.term_id(self.repo, t), fid) for t in terms]
+        stats = self.store.edge_weights(POINTS_TO, pairs) if pairs else {}
+        learned = [{"term": t, **stats[pair]} for t, pair in zip(terms, pairs, strict=True) if pair in stats]
+        learned.sort(key=lambda x: -(x.get("w") or 0))
+        return {"path": path, "known": True, "paths": sorted(rendered, key=len)[:max_paths], "learned": learned}
+
     def _rank_for_fusion(self, task: str) -> list[str]:
         if self.external_rank is not None:
             return self.external_rank(task)

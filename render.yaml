@@ -1,0 +1,13 @@
+# Render blueprint for the Klew hosted demo (New → Blueprint → this repo). One free Docker web service.
+services:
+  - type: web
+    name: klew-demo
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile.demo
+    dockerContext: .
+    healthCheckPath: /api/health
+    autoDeploy: false
+    envVars:
+      - key: KLEW_RATE_PER_MIN
+        value: "30"

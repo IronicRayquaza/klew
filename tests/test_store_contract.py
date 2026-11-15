@@ -80,3 +80,12 @@ def test_list_nodes(store, repo_key):
     store.upsert_nodes(REPO, [{"id": rid, "repo": repo_key, "key": repo_key, "root": "/x"}])
     assert any(r["id"] == rid and r["root"] == "/x" for r in store.list_nodes(REPO, ["repo", "root"]))
     store.delete_repo(repo_key)
+
+
+def test_key_paths_follow_calls_into_a_file(store, repo_key):
+    f1, f2, s1, s2, s3 = seed(store, repo_key)
+    paths = store.key_paths(repo_key, SYMBOL, ["a.f"], FILE, ["b.py"], ["CALLS", "CONTAINS"], 3, 3)
+    assert paths, "expected a path a.f -CALLS-> b.h -CONTAINS- b.py"
+    keys = [x if isinstance(x, str) else x.get("key") for x in paths[0]]
+    assert keys[0] == "a.f" and keys[-1] == "b.py" and "CALLS" in keys and "b.h" in keys
+    store.delete_repo(repo_key)

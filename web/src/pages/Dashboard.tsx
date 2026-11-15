@@ -11,6 +11,7 @@ const EXAMPLES = [
 
 export default function Dashboard() {
   const [live, setLive] = useState<boolean | null>(null)
+  const [demo, setDemo] = useState(false)
   const [repos, setRepos] = useState<Repo[]>([])
   const [repo, setRepo] = useState('')
   const [stats, setStats] = useState<GraphStats | null>(null)
@@ -27,6 +28,7 @@ export default function Dashboard() {
     ;(async () => {
       const up = await backendUp()
       setLive(up)
+      if (up) api.health().then((h) => setDemo(!!h.demo)).catch(() => {})
       if (up) {
         const rs = await api.repos().catch(() => [])
         setRepos(rs)
@@ -71,6 +73,13 @@ export default function Dashboard() {
       <header className="grid gap-3">
         <span className="eyebrow">Live context</span>
         <h1 className="text-4xl font-bold">Ask for context, then teach it what you changed</h1>
+        {demo && (
+          <p className="rounded-lg border border-line bg-card px-4 py-3 text-sm text-muted">
+            This is a shared public demo on a free server with a tenth of a CPU, so each query takes several seconds
+            (about 0.3 s on a laptop). The httpx and flask graphs start pre-trained on their history; what you teach
+            here is shared with other visitors and resets when the server restarts.
+          </p>
+        )}
         {live === false && (
           <p className="rounded-lg border border-line bg-card px-4 py-3 text-sm text-muted">
             You're viewing a recorded run. To try your own tasks, start the API with
@@ -111,7 +120,7 @@ export default function Dashboard() {
           </div>
           <button type="button" onClick={run} disabled={!live || busy || !repo}
                   className="ml-auto rounded-lg bg-ink px-5 py-2 font-medium text-paper disabled:opacity-50">
-            {busy ? 'Walking the graph…' : 'Get context'}
+            {busy ? (demo ? 'Walking the graph… (a few seconds on the free server)' : 'Walking the graph…') : 'Get context'}
           </button>
         </div>
         {error && <p className="text-sm text-alarm">{error}</p>}

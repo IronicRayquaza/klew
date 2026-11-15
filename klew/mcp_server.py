@@ -17,10 +17,7 @@ from pathlib import Path
 
 from mcp.server.mcpserver import MCPServer
 
-from . import ids
-from .domain.seeder import task_terms
 from .runtime import get_runtime, repo_key_for
-from .schema import POINTS_TO
 
 INSTRUCTIONS = """Klew maps this repository as a graph and remembers which code mattered for
 past tasks. Call get_context with the task before reading files. It returns the files and
@@ -87,21 +84,21 @@ def record_outcome(run_id: int, touched_files: list[str] | None = None) -> str:
 
 @server.tool()
 def explain(task: str, path: str) -> str:
-    """Show what the graph has learned linking the words of `task` to the file at `path`."""
+    """Why `path` matters for `task`: paths through the code found by HydraDB, and what Klew has learned."""
     eng = _engine()
-    fid = eng.fid_of.get(path)
-    if fid is None:
+    e = eng.explain(task, path)
+    if not e["known"]:
         return f"{path} is not in the graph."
-    terms = task_terms(task)
-    pairs = [(ids.term_id(eng.repo, t), fid) for t in terms]
-    stats = eng.store.edge_weights(POINTS_TO, pairs)
-    lines = [f"Learned links from this task's words to {path}:"]
-    for t, pair in zip(terms, pairs, strict=True):
-        s = stats.get(pair)
-        if s:
-            lines.append(f"  '{t}' → w={s['w']:.2f} (hits {s['hits']}, misses {s['misses']})")
-    if len(lines) == 1:
-        lines.append("  none yet; this file was reached through code structure only.")
+    lines = [f"Paths through the code from this task to {path} (found by HydraDB's path search):"]
+    for p in e["paths"]:
+        lines.append("  " + " ".join(x.lower().replace("_", " ") if i % 2 else x for i, x in enumerate(p)))
+    if not e["paths"]:
+        lines.append("  none within 3 hops; the file was reached through learned links or text.")
+    lines.append("Learned links from this task's words:")
+    for x in e["learned"][:8]:
+        lines.append(f"  '{x['term']}' → w={x['w']:.2f} (hits {x['hits']}, misses {x['misses']})")
+    if not e["learned"]:
+        lines.append("  none yet.")
     return "\n".join(lines)
 
 

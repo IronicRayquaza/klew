@@ -100,6 +100,40 @@ class MemoryGraphStore:
         return sum(len(v) for s, v in self.out[etype.name].items()
                    if self.nodes[etype.src].get(s, {}).get("repo") == repo)
 
+    def key_paths(self, repo: str, src_label: str, src_keys, dst_label: str, dst_keys, rel_types,
+                  max_len: int = 3, limit: int = 5) -> list[list]:
+        """Reference BFS with the same output shape as HydraDB's algo.MSpaths (both directions)."""
+        from collections import deque
+        self.queries += 1
+        by_key = {}
+        for lbl, tbl in self.nodes.items():
+            for i, r in tbl.items():
+                if r.get("repo") == repo:
+                    by_key[(lbl, r.get("key"))] = i
+        lookup = {i: r for tbl in self.nodes.values() for i, r in tbl.items()}
+        targets = {by_key[(dst_label, k)] for k in dst_keys if (dst_label, k) in by_key}
+        out = []
+        for k in src_keys:
+            s = by_key.get((src_label, k))
+            if s is None:
+                continue
+            q = deque([[s]])
+            while q and len(out) < limit * 4:
+                p = q.popleft()
+                if p[-1] in targets and len(p) > 1:
+                    out.append(p)
+                    continue
+                if (len(p) - 1) // 2 >= max_len:
+                    continue
+                for t in rel_types:
+                    for nb in list(self.out[t].get(p[-1], {})) + list(self.inn[t].get(p[-1], {})):
+                        if nb not in p[::2]:
+                            q.append(p + [t, nb])
+        res = [[x if isinstance(x, str) else {k2: v for k2, v in lookup[x].items() if k2 != "id"} for x in p]
+               for p in out]
+        res.sort(key=len)
+        return res[:limit]
+
     def shortest_paths(self, etype: EdgeType, src: int, dst: int, max_len: int, k: int) -> list[list[Row]]:
         self.queries += 1
         # BFS over both directions, mirroring relDirection: 'both'
