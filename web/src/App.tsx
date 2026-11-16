@@ -1,5 +1,12 @@
 import { useEffect, useState } from "react";
-import { IconArrowLeft, IconArrowRight, IconCheck, IconCopy } from "./components/Icons";
+import {
+  IconArrowLeft,
+  IconArrowRight,
+  IconCheck,
+  IconCopy,
+  IconMenu,
+  IconX,
+} from "./components/Icons";
 import { LogoWithName, Wordmark } from "./components/Logo";
 import { WaitlistModal } from "./components/WaitlistModal";
 import { Dashboard } from "./pages/Dashboard";
@@ -8,6 +15,12 @@ import { Landing } from "./pages/Landing";
 import { Results } from "./pages/Results";
 
 type Tab = "landing" | "app" | "results" | "docs";
+
+const NAV_ITEMS: readonly [Tab, string][] = [
+  ["landing", "Overview"],
+  ["results", "Evidence"],
+  ["docs", "Docs"],
+];
 
 function parseHash(h: string): { tab: Tab; sub?: string } {
   const s = h.replace(/^#\/?/, "");
@@ -23,23 +36,30 @@ export default function App() {
   const [route, setRoute] = useState(() => parseHash(window.location.hash));
   const [copiedFooterCmd, setCopiedFooterCmd] = useState(false);
   const [waitlistOpen, setWaitlistOpen] = useState(false);
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [scrollY, setScrollY] = useState(0);
 
   useEffect(() => {
     document.documentElement.dataset.theme = "light";
     const onHash = () => {
       setRoute(parseHash(window.location.hash));
+      setMobileNavOpen(false);
       window.scrollTo({ top: 0, behavior: "smooth" });
     };
     const onScroll = () => {
       setScrollY(window.scrollY || window.pageYOffset || 0);
     };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setMobileNavOpen(false);
+    };
     onScroll();
     window.addEventListener("hashchange", onHash);
     window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("keydown", onKey);
     return () => {
       window.removeEventListener("hashchange", onHash);
       window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("keydown", onKey);
     };
   }, []);
 
@@ -47,6 +67,7 @@ export default function App() {
     window.location.hash =
       t === "landing" ? "" : t === "docs" ? (sub ? `docs/${sub}` : "docs") : t;
     setRoute({ tab: t, sub });
+    setMobileNavOpen(false);
   };
 
   const tab = route.tab;
@@ -74,13 +95,13 @@ export default function App() {
           isPlayground
             ? "sticky top-0 bg-card/90 backdrop-blur-md px-5 sm:px-8"
             : `fixed top-0 inset-x-0 py-2.5 px-frame ${
-                navBlurred
-                  ? "bg-paper/55 backdrop-blur-md"
+                navBlurred || mobileNavOpen
+                  ? "bg-paper/75 backdrop-blur-md"
                   : "bg-transparent"
               }`
         }`}
       >
-        <div className="flex h-17 w-full items-center justify-between gap-4">
+        <div className="flex h-17 w-full items-center justify-between gap-3">
           {/* Brand Wordmark */}
           <a
             href="#"
@@ -93,18 +114,12 @@ export default function App() {
             <Wordmark size="md" showPronunciation />
           </a>
 
-          {/* Center Pill Navigation (Overview, Evidence, Docs only - Playground is the right CTA) */}
+          {/* Center Pill Navigation (Desktop md+) */}
           <nav
-            className="flex items-center gap-1 rounded-full border border-line bg-card/90 p-1 shadow-xs"
+            className="hidden items-center gap-1 rounded-full border border-line bg-card/90 p-1 shadow-xs md:flex"
             aria-label="Main navigation"
           >
-            {(
-              [
-                ["landing", "Overview"],
-                ["results", "Evidence"],
-                ["docs", "Docs"],
-              ] as const
-            ).map(([k, label]) => {
+            {NAV_ITEMS.map(([k, label]) => {
               const active = tab === k;
               return (
                 <button
@@ -123,13 +138,16 @@ export default function App() {
             })}
           </nav>
 
-          {/* Right CTA: the waitlist (the hero and footer already link to the Playground) */}
-          <div className="flex items-center gap-2.5">
+          {/* Right CTA (Join waitlist / Overview) + Mobile Burger Menu */}
+          <div className="flex items-center gap-2">
             {!isPlayground ? (
               <button
                 type="button"
-                onClick={() => setWaitlistOpen(true)}
-                className="btn-soft hidden items-center gap-2 rounded-full bg-ink px-4 py-2 text-xs font-medium text-paper shadow-xs hover:opacity-90 sm:inline-flex sm:px-5"
+                onClick={() => {
+                  setMobileNavOpen(false);
+                  setWaitlistOpen(true);
+                }}
+                className="btn-soft inline-flex items-center gap-1.5 rounded-full bg-ink px-3.5 py-2 text-xs font-medium text-paper shadow-xs hover:opacity-90 sm:gap-2 sm:px-5"
               >
                 <span>Join waitlist</span>
                 <IconArrowRight size={14} />
@@ -138,14 +156,58 @@ export default function App() {
               <button
                 type="button"
                 onClick={() => go("landing")}
-                className="btn-soft hidden sm:inline-flex items-center gap-2 rounded-full border border-line bg-card px-4 py-1.5 font-mono text-xs font-medium text-ink hover:bg-paper"
+                className="btn-soft inline-flex items-center gap-1.5 rounded-full border border-line bg-card px-3.5 py-1.5 font-mono text-xs font-medium text-ink hover:bg-paper sm:gap-2 sm:px-4"
               >
                 <IconArrowLeft size={14} />
                 <span>Overview</span>
               </button>
             )}
+
+            <button
+              type="button"
+              onClick={() => setMobileNavOpen((v) => !v)}
+              aria-expanded={mobileNavOpen}
+              aria-controls="mobile-top-nav"
+              aria-label={mobileNavOpen ? "Close navigation menu" : "Open navigation menu"}
+              className="btn-soft flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-line bg-card/90 text-ink shadow-xs backdrop-blur-md md:hidden"
+            >
+              {mobileNavOpen ? <IconX size={16} /> : <IconMenu size={16} />}
+            </button>
           </div>
         </div>
+
+        {/* Mobile Top-Opening Dropdown Nav (height fit to content only) */}
+        {mobileNavOpen && (
+          <nav
+            id="mobile-top-nav"
+            aria-label="Mobile navigation"
+            className="animate-modal-in mt-1 mb-2 h-fit w-full rounded-2xl border border-line bg-card/95 p-2 shadow-lg backdrop-blur-md md:hidden"
+          >
+            <div className="flex flex-col gap-1">
+              {NAV_ITEMS.map(([k, label]) => {
+                const active = tab === k;
+                return (
+                  <button
+                    key={k}
+                    type="button"
+                    onClick={() => go(k)}
+                    className={`btn-soft flex w-full items-center justify-between rounded-xl px-4 py-2.5 text-left text-sm font-medium ${
+                      active
+                        ? "bg-ink text-paper shadow-2xs"
+                        : "text-ink-soft hover:bg-paper hover:text-ink"
+                    }`}
+                  >
+                    <span>{label}</span>
+                    <IconArrowRight
+                      size={13}
+                      className={active ? "text-paper/80" : "text-muted"}
+                    />
+                  </button>
+                );
+              })}
+            </div>
+          </nav>
+        )}
       </header>
 
       {/* Main Content */}
@@ -211,11 +273,11 @@ export default function App() {
                 <button
                   type="button"
                   onClick={copyInstallCmd}
-                  className="btn-soft inline-flex items-center gap-3 rounded-full border border-line bg-paper px-4 py-2.5 font-mono text-xs text-ink hover:border-ink/40"
+                  className="btn-soft inline-flex items-center justify-between gap-2.5 rounded-2xl border border-line bg-paper px-3.5 py-2.5 text-left font-mono text-[11px] text-ink hover:border-ink/40 sm:gap-3 sm:rounded-full sm:px-4 sm:text-xs"
                   title="Copy install command"
                 >
                   <span>$ pip install klew &amp;&amp; klew hydra up</span>
-                  <span className="inline-flex items-center gap-1 rounded-full bg-card px-2.5 py-0.5 text-[10px] font-medium text-muted">
+                  <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-card px-2.5 py-0.5 text-[10px] font-medium text-muted">
                     {copiedFooterCmd ? <IconCheck size={11} /> : <IconCopy size={11} />}
                     <span>{copiedFooterCmd ? "Copied" : "Copy"}</span>
                   </span>

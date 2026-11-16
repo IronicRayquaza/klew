@@ -652,7 +652,7 @@ export function Dashboard() {
                   <div
                     role="radiogroup"
                     aria-labelledby="repo-label"
-                    className="mt-3 flex flex-wrap gap-1 rounded-full border border-line bg-card p-1"
+                    className="mt-3 flex flex-wrap gap-1 rounded-2xl border border-line bg-card p-1 sm:rounded-full"
                   >
                     {(repos.length ? repos.map((r) => r.repo) : [repo || "httpx"]).map((name) => {
                       const on = name === repo;
@@ -664,7 +664,7 @@ export function Dashboard() {
                           aria-checked={on}
                           disabled={!live}
                           onClick={() => setRepo(name)}
-                          className={`btn-soft min-w-20 flex-1 rounded-full px-4 py-2 font-mono text-xs font-medium disabled:cursor-not-allowed ${
+                          className={`btn-soft min-w-20 flex-1 rounded-xl px-4 py-2 font-mono text-xs font-medium sm:rounded-full disabled:cursor-not-allowed ${
                             on ? "bg-ink text-paper shadow-xs" : "text-muted hover:text-ink"
                           }`}
                         >

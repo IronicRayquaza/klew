@@ -240,7 +240,7 @@ klew context "Raise ReadTimeout when stream times out"`;
           <div className="relative h-[calc(100vh+180px)] w-full">
             <div className="sticky top-0 flex h-screen w-full flex-col items-center justify-center px-frame pt-14 text-center">
               <div className="mx-auto max-w-4xl">
-                <div className="inline-flex items-center rounded-full border border-line bg-card/90 px-4 py-1.5 font-mono text-xs text-ink shadow-2xs backdrop-blur-md">
+                <div className="inline-flex max-w-full items-center rounded-full border border-line bg-card/90 px-3 py-1 font-mono text-[10px] leading-snug text-ink shadow-2xs backdrop-blur-md sm:px-4 sm:py-1.5 sm:text-xs">
                   <span>MCP Context Server for Coding Agents · Built on HydraDB</span>
                 </div>
 
@@ -256,11 +256,11 @@ klew context "Raise ReadTimeout when stream times out"`;
                   learning which paths lead to merged code.
                 </p>
 
-                <div className="mt-9 flex flex-wrap items-center justify-center gap-3.5">
+                <div className="mt-9 flex flex-wrap items-center justify-center gap-4 sm:gap-6">
                   <button
                     type="button"
                     onClick={onTry}
-                    className="btn-soft inline-flex items-center gap-2.5 rounded-full bg-ink px-7 py-3.5 text-sm font-medium text-paper shadow-sm hover:bg-trail"
+                    className="btn-soft inline-flex items-center gap-2 rounded-full bg-ink px-6 py-3 text-xs font-medium text-paper shadow-sm hover:bg-trail sm:gap-2.5 sm:px-7 sm:py-3.5 sm:text-sm"
                   >
                     <span>Explore the Playground</span>
                     <IconArrowRight size={15} />
@@ -268,16 +268,10 @@ klew context "Raise ReadTimeout when stream times out"`;
                   <button
                     type="button"
                     onClick={onResults}
-                    className="btn-soft rounded-full border border-line bg-card/90 px-6 py-3.5 text-sm font-medium text-ink backdrop-blur-md hover:border-ink/40"
+                    className="btn-soft inline-flex items-center gap-1.5 px-2 py-2 text-xs font-medium text-ink underline decoration-ink/35 underline-offset-4 hover:decoration-ink sm:text-sm"
                   >
-                    View Held-Out Evidence
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => onDocs("quickstart")}
-                    className="btn-soft rounded-full bg-card/75 px-5 py-3.5 text-sm font-medium text-ink-soft backdrop-blur-md hover:text-ink"
-                  >
-                    Read Docs
+                    <span>View Held-Out Evidence</span>
+                    <IconArrowRight size={14} />
                   </button>
                 </div>
               </div>
@@ -370,7 +364,7 @@ klew context "Raise ReadTimeout when stream times out"`;
             </p>
           </div>
 
-          <div className="flex flex-wrap items-center gap-1.5 self-start rounded-full border border-line bg-card p-1.5">
+          <div className="flex flex-wrap items-center gap-1.5 self-start rounded-2xl border border-line bg-card p-1.5 sm:rounded-full">
             {(
               [
                 ["httpx", "encode/httpx"],
@@ -382,7 +376,7 @@ klew context "Raise ReadTimeout when stream times out"`;
                 key={key}
                 type="button"
                 onClick={() => setSelectedRepoKey(key)}
-                className={`btn-soft rounded-full px-4 py-1.5 font-mono text-xs font-medium ${
+                className={`btn-soft rounded-xl px-4 py-1.5 font-mono text-xs font-medium sm:rounded-full ${
                   selectedRepoKey === key
                     ? "bg-ink text-paper shadow-xs"
                     : "text-muted hover:text-ink"
@@ -450,7 +444,7 @@ klew context "Raise ReadTimeout when stream times out"`;
         {/* Full-Width Trajectory Graph Card */}
         {activeEval && (
           <div className="surface-card mt-8 p-6 sm:p-10">
-            <div className="mb-6 flex flex-wrap items-baseline justify-between gap-4">
+            <div className="mb-6 flex flex-wrap items-start justify-between gap-4 sm:items-center">
               <div>
                 <h3 className="font-display text-xl font-semibold text-ink sm:text-2xl">
                   Right file in context over time ·{" "}
@@ -536,7 +530,7 @@ klew context "Raise ReadTimeout when stream times out"`;
               <div className="rounded-3xl border border-line bg-paper p-2.5 sm:p-3">
                 {/* Window Chrome Header */}
                 <div className="flex flex-wrap items-center justify-between gap-2 px-2 pb-2.5">
-                  <div className="flex flex-wrap items-center gap-1 rounded-full bg-card/80 p-1 text-xs font-medium shadow-2xs">
+                  <div className="flex flex-wrap items-center gap-1 rounded-2xl bg-card/80 p-1 text-xs font-medium shadow-2xs sm:rounded-full">
                     {(
                       [
                         ["cli", "Terminal CLI"],
@@ -548,7 +542,7 @@ klew context "Raise ReadTimeout when stream times out"`;
                         key={k}
                         type="button"
                         onClick={() => setInstallTab(k)}
-                        className={`btn-soft rounded-full px-3.5 py-1.5 text-xs ${
+                        className={`btn-soft rounded-xl px-3.5 py-1.5 text-xs sm:rounded-full ${
                           installTab === k
                             ? "bg-ink text-paper shadow-2xs"
                             : "text-muted hover:text-ink"

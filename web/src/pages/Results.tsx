@@ -68,7 +68,7 @@ export function Results({ onTry }: { onTry: () => void }) {
          ===================================================================== */}
       <section className="px-frame pt-12 pb-16 sm:pt-18 sm:pb-20">
         <div className="max-w-3xl">
-          <div className="inline-flex items-center rounded-full border border-line bg-card px-4 py-1.5 font-mono text-xs text-muted shadow-2xs">
+          <div className="inline-flex max-w-full items-center rounded-full border border-line bg-card px-3 py-1 font-mono text-[10px] leading-snug text-muted shadow-2xs sm:px-4 sm:py-1.5 sm:text-xs">
             <span>Evidence · {totalHeldOut} held-out commits across {results.length} repos</span>
           </div>
 
@@ -87,7 +87,7 @@ export function Results({ onTry }: { onTry: () => void }) {
         {/* Sticky / Floating Filter Bar */}
         <div className="mt-10 flex flex-wrap items-center justify-between gap-4">
           {/* Repository Switcher Pills */}
-          <div className="flex flex-wrap items-center gap-1.5 rounded-full border border-line bg-card p-1.5 shadow-2xs">
+          <div className="flex flex-wrap items-center gap-1.5 rounded-2xl border border-line bg-card p-1.5 shadow-2xs sm:rounded-full">
             {ordered.map((r) => {
               const isSel = r.repo === active.repo;
               return (
@@ -95,7 +95,7 @@ export function Results({ onTry }: { onTry: () => void }) {
                   key={r.repo}
                   type="button"
                   onClick={() => setSelectedRepo(r.repo)}
-                  className={`btn-soft rounded-full px-5 py-2 font-mono text-xs font-medium ${
+                  className={`btn-soft rounded-xl px-4 py-1.5 font-mono text-xs font-medium sm:rounded-full sm:px-5 sm:py-2 ${
                     isSel ? "bg-ink text-paper shadow-xs" : "text-muted hover:text-ink"
                   }`}
                 >
@@ -107,11 +107,11 @@ export function Results({ onTry }: { onTry: () => void }) {
 
           {/* Held-Out vs All Commits Switch */}
           <div className="flex flex-wrap items-center gap-2">
-            <div className="flex rounded-full border border-line bg-card p-1 text-xs">
+            <div className="flex flex-wrap rounded-2xl border border-line bg-card p-1 text-xs sm:rounded-full">
               <button
                 type="button"
                 onClick={() => setHeldOut(true)}
-                className={`btn-soft rounded-full px-4 py-1.5 font-medium ${
+                className={`btn-soft rounded-xl px-4 py-1.5 font-medium sm:rounded-full ${
                   heldOut ? "bg-ink text-paper" : "text-muted hover:text-ink"
                 }`}
               >
@@ -120,7 +120,7 @@ export function Results({ onTry }: { onTry: () => void }) {
               <button
                 type="button"
                 onClick={() => setHeldOut(false)}
-                className={`btn-soft rounded-full px-4 py-1.5 font-medium ${
+                className={`btn-soft rounded-xl px-4 py-1.5 font-medium sm:rounded-full ${
                   !heldOut ? "bg-ink text-paper" : "text-muted hover:text-ink"
                 }`}
               >
@@ -210,13 +210,13 @@ export function Results({ onTry }: { onTry: () => void }) {
               </p>
             </div>
 
-            <div className="flex rounded-full bg-paper p-1 text-xs font-medium">
+            <div className="flex flex-wrap gap-1 rounded-2xl bg-paper p-1 text-xs font-medium sm:rounded-full">
               {(["budget_recall", "recall@5"] as const).map((m) => (
                 <button
                   key={m}
                   type="button"
                   onClick={() => setMetric(m)}
-                  className={`btn-soft rounded-full px-4 py-1.5 ${
+                  className={`btn-soft rounded-xl px-4 py-1.5 sm:rounded-full ${
                     metric === m ? "bg-card text-ink shadow-xs" : "text-muted hover:text-ink"
                   }`}
                 >
@@ -263,7 +263,7 @@ export function Results({ onTry }: { onTry: () => void }) {
         <div className="grid grid-cols-1 gap-10">
           {learnGain !== null && (
             <div className="surface-card p-7 sm:p-12">
-              <div className="mb-6 flex flex-wrap items-baseline justify-between gap-4">
+              <div className="mb-6 flex flex-col justify-between gap-4 sm:flex-row sm:items-start">
                 <div className="max-w-2xl">
                   <span className="font-mono text-xs uppercase tracking-wider text-moss">
                     Ablation 01 · Continual Learning
@@ -278,8 +278,8 @@ export function Results({ onTry }: { onTry: () => void }) {
                   </p>
                 </div>
 
-                <div className="text-right">
-                  <div className="num rounded-2xl bg-moss-soft px-5 py-3 font-display text-3xl font-semibold text-moss">
+                <div className="shrink-0 text-left sm:text-right">
+                  <div className="num inline-block rounded-2xl bg-moss-soft px-5 py-3 font-display text-3xl font-semibold text-moss">
                     {(learnMrrGain ?? learnGain) >= 0 ? "+" : ""}
                     {(learnMrrGain ?? learnGain).toFixed(1)} pts
                   </div>
@@ -304,7 +304,7 @@ export function Results({ onTry }: { onTry: () => void }) {
 
           {graphGain !== null && (
             <div className="surface-card p-7 sm:p-12">
-              <div className="mb-6 flex flex-wrap items-baseline justify-between gap-4">
+              <div className="mb-6 flex flex-col justify-between gap-4 sm:flex-row sm:items-start">
                 <div className="max-w-2xl">
                   <span className="font-mono text-xs uppercase tracking-wider text-trail">
                     Ablation 02 · Graph Traversal
@@ -318,8 +318,8 @@ export function Results({ onTry }: { onTry: () => void }) {
                   </p>
                 </div>
 
-                <div className="text-right">
-                  <div className="num rounded-2xl bg-trail-soft px-5 py-3 font-display text-3xl font-semibold text-trail">
+                <div className="shrink-0 text-left sm:text-right">
+                  <div className="num inline-block rounded-2xl bg-trail-soft px-5 py-3 font-display text-3xl font-semibold text-trail">
                     {graphGain >= 0 ? "+" : ""}
                     {graphGain.toFixed(1)} pts
                   </div>

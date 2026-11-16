@@ -128,13 +128,13 @@ export function LabyrinthHero() {
   return (
     <div className="surface-card overflow-hidden p-5 sm:p-8">
       <div className="flex flex-wrap items-center justify-between gap-3 pb-5">
-        <div className="flex flex-wrap items-center gap-1.5 rounded-full bg-paper p-1">
+        <div className="flex flex-wrap items-center gap-1 rounded-2xl bg-paper p-1.5 md:rounded-full md:p-1">
           {data.scenarios.map((s, i) => (
             <button
               key={s.task}
               type="button"
               onClick={() => setIdx(i)}
-              className={`btn-soft rounded-full px-3.5 py-1.5 text-xs font-medium ${
+              className={`btn-soft rounded-xl px-3.5 py-1.5 text-xs font-medium md:rounded-full ${
                 i === idx ? "bg-card text-ink shadow-xs" : "text-muted hover:text-ink"
               }`}
             >
@@ -143,11 +143,11 @@ export function LabyrinthHero() {
           ))}
         </div>
 
-        <div className="inline-flex items-center rounded-full bg-paper p-1 text-xs" role="group" aria-label="Graph learning state">
+        <div className="inline-flex flex-wrap items-center gap-1 rounded-2xl bg-paper p-1 text-xs sm:rounded-full" role="group" aria-label="Graph learning state">
           <button
             type="button"
             onClick={() => setLearned(false)}
-            className={`btn-soft rounded-full px-3.5 py-1.5 font-medium ${
+            className={`btn-soft rounded-xl px-3.5 py-1.5 font-medium sm:rounded-full ${
               !learned ? "bg-card text-ink shadow-xs" : "text-muted hover:text-ink"
             }`}
           >
@@ -156,7 +156,7 @@ export function LabyrinthHero() {
           <button
             type="button"
             onClick={() => setLearned(true)}
-            className={`btn-soft rounded-full px-3.5 py-1.5 font-medium ${
+            className={`btn-soft rounded-xl px-3.5 py-1.5 font-medium sm:rounded-full ${
               learned ? "bg-ink text-paper shadow-xs" : "text-muted hover:text-ink"
             }`}
           >

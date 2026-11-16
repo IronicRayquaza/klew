@@ -131,7 +131,19 @@ body {
 }
 
 /* Smooth hover & press micro-interactions */
+button:not(:disabled),
+a,
+[role="button"],
+select:not(:disabled) {
+  cursor: pointer;
+}
+button:disabled,
+select:disabled {
+  cursor: not-allowed;
+}
+
 .btn-soft {
+  cursor: pointer;
   transition:
     transform 220ms var(--ease-spring),
     background-color 200ms ease,
